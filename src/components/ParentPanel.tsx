@@ -51,8 +51,8 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       <div className="container mx-auto max-w-4xl">
         <div className="card-kids mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-8 h-8 text-[hsl(var(--kids-blue))]" />
-            <h1 className="text-3xl font-bold text-[hsl(var(--kids-blue))]">
+            <Shield className="w-8 h-8 text-[hsl(var(--youtube-red))]" />
+            <h1 className="text-3xl font-bold text-[hsl(var(--youtube-red))]">
               Painel dos Pais
             </h1>
           </div>
@@ -72,7 +72,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
             />
             <Button
               onClick={addUrl}
-              className="btn-kids bg-[hsl(var(--kids-blue))] text-white hover:bg-[hsl(var(--kids-blue-dark))]"
+              className="btn-kids bg-[hsl(var(--youtube-red))] text-white hover:bg-[hsl(var(--youtube-red-dark))]"
             >
               <Plus className="w-5 h-5 mr-2" />
               Adicionar
@@ -110,7 +110,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
         <Button
           onClick={onSwitchToChild}
-          className="btn-kids bg-[hsl(var(--kids-blue))] text-white hover:bg-[hsl(var(--kids-blue-dark))] w-full"
+          className="btn-kids bg-[hsl(var(--youtube-red))] text-white hover:bg-[hsl(var(--youtube-red-dark))] w-full"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Voltar para Modo Criança

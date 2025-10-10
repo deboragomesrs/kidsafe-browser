@@ -12,7 +12,7 @@ export default function ChildView() {
 
   if (showWelcome) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[hsl(var(--kids-blue))] to-[hsl(var(--kids-blue-dark))] p-8 animate-fade-in">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[hsl(var(--youtube-red))] to-[hsl(var(--youtube-red-dark))] p-8 animate-fade-in">
         <img 
           src={lionMascot} 
           alt="Leão mascote" 

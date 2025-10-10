@@ -8,7 +8,7 @@ interface HeaderProps {
 
 export default function Header({ onSwitchToParent }: HeaderProps) {
   return (
-    <header className="bg-gradient-to-r from-[hsl(var(--kids-blue))] to-[hsl(var(--kids-blue-dark))] text-white p-4 shadow-lg flex items-center justify-between">
+    <header className="bg-gradient-to-r from-[hsl(var(--youtube-red))] to-[hsl(var(--youtube-red-dark))] text-white p-4 shadow-lg flex items-center justify-between">
       <div className="flex items-center gap-3">
         <img src={lionMascot} alt="Leão" className="w-10 h-10 object-contain" />
         <h1 className="text-xl font-bold">Barra Kids</h1>

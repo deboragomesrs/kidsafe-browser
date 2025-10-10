@@ -46,7 +46,7 @@ export default function SafeBrowser() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <div className="card-kids max-w-2xl text-center">
-          <AlertCircle className="w-16 h-16 text-[hsl(var(--kids-yellow))] mx-auto mb-4" />
+          <AlertCircle className="w-16 h-16 text-[hsl(var(--youtube-red))] mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">Nenhum vídeo disponível</h2>
           <p className="text-muted-foreground mb-6">
             Peça aos seus pais para adicionar alguns vídeos ou canais no Painel dos Pais!
