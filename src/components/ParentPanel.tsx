@@ -3,20 +3,18 @@ import { Plus, Trash2, ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { AllowedContent } from "@/types"; // Importa o tipo AllowedContent
+import { AllowedContent } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   onSwitchToChild: () => void;
 }
-
-const SUPABASE_EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-youtube-channel-videos`;
 
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [newUrl, setNewUrl] = useState("");
 
   useEffect(() => {
-    console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL); // Adicionado para depuração
     const saved = localStorage.getItem("barraKidsAllowedContent");
     if (saved) {
       try {
@@ -49,15 +47,17 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       // Assume it's a channel URL and try to fetch details via Edge Function
       try {
         toast.loading("Verificando canal...");
-        const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, { // Endpoint da Edge Function
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ channelUrl: url }),
+        
+        const { data, error } = await supabase.functions.invoke('fetch-youtube-channel-videos', {
+          body: { channelUrl: url }
         });
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Falha ao buscar detalhes do canal.");
+        if (error) {
+          throw new Error(error.message || "Falha ao buscar detalhes do canal.");
+        }
+        
+        if (!data || !data.channelId) {
+          throw new Error("Resposta inválida do servidor.");
         }
         
         contentToAdd = { type: 'channel', id: data.channelId, name: data.channelName, url: url };
