@@ -47,7 +47,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[hsl(var(--kids-blue-light))] p-4">
+    <div className="w-full h-full p-4">
       <div className="container mx-auto max-w-4xl">
         <div className="card-kids mb-6">
           <div className="flex items-center gap-3 mb-6">

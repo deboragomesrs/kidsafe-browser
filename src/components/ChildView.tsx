@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react";
-import { Lock } from "lucide-react";
 import lionMascot from "@/assets/lion-mascot.png";
 import SafeBrowser from "./SafeBrowser";
 
-interface Props {
-  onSwitchToParent: () => void;
-}
-
-export default function ChildView({ onSwitchToParent }: Props) {
+export default function ChildView() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
@@ -17,7 +12,7 @@ export default function ChildView({ onSwitchToParent }: Props) {
 
   if (showWelcome) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[hsl(var(--kids-blue))] to-[hsl(var(--kids-blue-dark))] p-8 animate-fade-in">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[hsl(var(--kids-blue))] to-[hsl(var(--kids-blue-dark))] p-8 animate-fade-in">
         <img 
           src={lionMascot} 
           alt="Leão mascote" 
@@ -34,23 +29,7 @@ export default function ChildView({ onSwitchToParent }: Props) {
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[hsl(var(--kids-blue-light))]">
-      <header className="bg-gradient-to-r from-[hsl(var(--kids-blue))] to-[hsl(var(--kids-blue-dark))] text-white p-4 shadow-lg">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={lionMascot} alt="Leão" className="w-12 h-12 object-contain" />
-            <h1 className="text-2xl font-bold">Barra Kids</h1>
-          </div>
-          <button
-            onClick={onSwitchToParent}
-            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-all duration-300"
-          >
-            <Lock className="w-5 h-5" />
-            <span className="hidden sm:inline">Modo Pais</span>
-          </button>
-        </div>
-      </header>
-      
+    <div className="w-full h-full flex flex-col">
       <SafeBrowser />
     </div>
   );

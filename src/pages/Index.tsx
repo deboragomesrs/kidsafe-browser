@@ -2,6 +2,7 @@ import { useState } from "react";
 import ChildView from "@/components/ChildView";
 import ParentPanel from "@/components/ParentPanel";
 import LoginDialog from "@/components/LoginDialog";
+import MainLayout from "@/components/layout/MainLayout";
 
 const Index = () => {
   const [isParentMode, setIsParentMode] = useState(false);
@@ -22,11 +23,13 @@ const Index = () => {
 
   return (
     <>
-      {!isParentMode ? (
-        <ChildView onSwitchToParent={handleSwitchToParent} />
-      ) : (
-        <ParentPanel onSwitchToChild={handleSwitchToChild} />
-      )}
+      <MainLayout onSwitchToParent={handleSwitchToParent}>
+        {!isParentMode ? (
+          <ChildView />
+        ) : (
+          <ParentPanel onSwitchToChild={handleSwitchToChild} />
+        )}
+      </MainLayout>
       
       <LoginDialog
         open={showLoginDialog}
