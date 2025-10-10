@@ -9,6 +9,8 @@ interface Props {
   onSwitchToChild: () => void;
 }
 
+const SUPABASE_EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-youtube-channel-videos`;
+
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [newUrl, setNewUrl] = useState("");
@@ -46,7 +48,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       // Assume it's a channel URL and try to fetch details via Edge Function
       try {
         toast.loading("Verificando canal...");
-        const response = await fetch("/api/fetch-youtube-channel-videos", { // Endpoint da Edge Function
+        const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, { // Endpoint da Edge Function
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ channelUrl: url }),

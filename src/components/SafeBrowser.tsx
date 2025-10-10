@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AllowedContent, YouTubeVideo } from "@/types"; // Importa os tipos
 
+const SUPABASE_EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-youtube-channel-videos`;
+
 export default function SafeBrowser() {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [currentEmbedUrl, setCurrentEmbedUrl] = useState("");
@@ -45,7 +47,7 @@ export default function SafeBrowser() {
     } else if (content.type === 'channel') {
       toast.loading(`Carregando vídeos do canal "${content.name}"...`);
       try {
-        const response = await fetch("/api/fetch-youtube-channel-videos", {
+        const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ channelId: content.id }),
