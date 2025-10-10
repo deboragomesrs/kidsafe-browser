@@ -45,7 +45,7 @@ export default function LoginDialog({ open, onClose, onSuccess }: Props) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite a senha"
-              className="rounded-xl bg-input text-foreground border-border" {/* Usando cores do tema escuro */}
+              className="rounded-xl bg-input text-foreground border-border"
               autoFocus
             />
             <p className="text-sm text-muted-foreground mt-2">
