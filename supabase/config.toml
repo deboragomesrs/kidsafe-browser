@@ -2,5 +2,3 @@
 id = "jddqrsvxwvgoosjraner"
 
 [functions]
-# A linha 'deno_path' foi removida, pois estava causando um erro de sintaxe.
-# O Supabase CLI geralmente lida com o caminho do Deno automaticamente.
