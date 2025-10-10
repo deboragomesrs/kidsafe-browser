@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import lionMascot from "@/assets/lion-mascot.png";
+import barraKidsLogo from "@/assets/barra-kids-logo.jpeg"; // Importa o novo logo
 import SafeBrowser from "./SafeBrowser";
 
 export default function ChildView() {
@@ -12,14 +12,14 @@ export default function ChildView() {
 
   if (showWelcome) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[hsl(var(--youtube-red))] to-[hsl(var(--youtube-red-dark))] p-8 animate-fade-in">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-black p-8 animate-fade-in"> {/* Fundo preto */}
         <img 
-          src={lionMascot} 
-          alt="Leão mascote" 
+          src={barraKidsLogo} 
+          alt="Barra Kids Logo" 
           className="w-64 h-auto mb-8 animate-bounce-slow"
         />
         <h1 className="text-4xl md:text-6xl font-bold text-white text-center mb-4">
-          Bem-vindo ao BARRA KIDS! 🦁
+          Bem-vindo ao BARRA KIDS!
         </h1>
         <p className="text-xl md:text-2xl text-white/90 text-center max-w-2xl">
           Sua plataforma para assistir conteúdo seguro.

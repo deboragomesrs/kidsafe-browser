@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import lionMascot from "@/assets/lion-mascot.png";
+import barraKidsLogo from "@/assets/barra-kids-logo.jpeg"; // Importa o novo logo
 
 interface HeaderProps {
   onSwitchToParent: () => void;
@@ -10,7 +10,7 @@ export default function Header({ onSwitchToParent }: HeaderProps) {
   return (
     <header className="bg-background text-white p-4 shadow-lg flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <img src={lionMascot} alt="Leão" className="w-10 h-10 object-contain" />
+        <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
         <h1 className="text-xl font-bold">Barra Kids</h1>
       </div>
       <Button
