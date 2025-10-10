@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { AlertCircle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AllowedContent, YouTubeVideo } from "@/types"; // Importa os tipos
-
-const SUPABASE_EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-youtube-channel-videos`;
+import { AllowedContent, YouTubeVideo } from "@/types";
+import { supabase } from "@/integrations/supabase/client"; // Importa o cliente Supabase
 
 export default function SafeBrowser() {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
@@ -47,17 +46,18 @@ export default function SafeBrowser() {
     } else if (content.type === 'channel') {
       toast.loading(`Carregando vídeos do canal "${content.name}"...`);
       try {
-        const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ channelId: content.id }),
+        const { data, error: edgeFunctionError } = await supabase.functions.invoke('fetch-youtube-channel-videos', {
+          body: { channelId: content.id }
         });
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Falha ao buscar vídeos do canal.");
+        if (edgeFunctionError) {
+          throw new Error(edgeFunctionError.message || "Falha ao buscar vídeos do canal.");
         }
         
+        if (!data || !data.videos) {
+          throw new Error("Resposta inválida do servidor.");
+        }
+
         setCurrentVideos(data.videos);
         if (data.videos.length > 0) {
           setCurrentEmbedUrl(convertToEmbedUrl(data.videos[0].url));
