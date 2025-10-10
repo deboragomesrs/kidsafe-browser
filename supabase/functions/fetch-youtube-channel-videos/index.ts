@@ -4,7 +4,7 @@ const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
 
 serve(async (req) => {
   console.log("Edge Function received request.");
-  console.log({ YOUTUBE_API_KEY_STATUS: !!YOUTUBE_API_KEY }); // Adicionado para depuração
+  console.log("YOUTUBE_API_KEY_STATUS:", YOUTUBE_API_KEY ? "Configured" : "NOT Configured"); // Log mais explícito
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method Not Allowed" }), {

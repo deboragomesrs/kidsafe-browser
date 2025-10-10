@@ -16,6 +16,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
   const [newUrl, setNewUrl] = useState("");
 
   useEffect(() => {
+    console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL); // Adicionado para depuração
     const saved = localStorage.getItem("barraKidsAllowedContent");
     if (saved) {
       try {
