@@ -67,7 +67,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
               placeholder="Ex: youtube.com/watch?v=..."
-              className="flex-1 rounded-xl"
+              className="flex-1 rounded-xl bg-input text-foreground border-border" {/* Usando cores do tema escuro */}
               onKeyPress={(e) => e.key === "Enter" && addUrl()}
             />
             <Button
@@ -80,7 +80,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold mb-3">
+            <h2 className="text-xl font-semibold mb-3 text-foreground"> {/* Título da lista de URLs */}
               URLs Permitidas ({allowedUrls.length})
             </h2>
             {allowedUrls.length === 0 ? (
@@ -91,7 +91,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               allowedUrls.map((url, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm"
+                  className="flex items-center justify-between bg-secondary p-4 rounded-xl shadow-sm text-secondary-foreground" {/* Usando bg-secondary e text-secondary-foreground */}
                 >
                   <span className="text-sm break-all flex-1 mr-4">{url}</span>
                   <Button

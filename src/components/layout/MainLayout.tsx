@@ -12,7 +12,7 @@ export default function MainLayout({ children, onSwitchToParent }: MainLayoutPro
       <Header onSwitchToParent={onSwitchToParent} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-background"> {/* Changed to bg-background (white) */}
+        <main className="flex-1 overflow-y-auto bg-background"> {/* Fundo principal agora é dark */}
           {children}
         </main>
       </div>

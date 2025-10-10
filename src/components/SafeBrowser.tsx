@@ -47,7 +47,7 @@ export default function SafeBrowser() {
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <div className="card-kids max-w-2xl text-center">
           <AlertCircle className="w-16 h-16 text-[hsl(var(--youtube-red))] mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Nenhum vídeo disponível</h2>
+          <h2 className="text-2xl font-bold mb-4 text-foreground">Nenhum vídeo disponível</h2>
           <p className="text-muted-foreground mb-6">
             Peça aos seus pais para adicionar alguns vídeos ou canais no Painel dos Pais!
           </p>
@@ -59,7 +59,7 @@ export default function SafeBrowser() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Video List */}
-      <div className="bg-white border-b border-border p-4 overflow-x-auto">
+      <div className="bg-card border-b border-border p-4 overflow-x-auto"> {/* Usando bg-card e border-border */}
         <div className="flex gap-3 min-w-max">
           {allowedUrls.map((url, index) => (
             <Button

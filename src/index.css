@@ -8,33 +8,33 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Barra Kids - YouTube-inspired Theme */
-    --background: 0 0% 100%; /* White */
-    --foreground: 240 5% 10%; /* Dark Gray */
+    /* Barra Kids - YouTube-inspired Dark Theme */
+    --background: 240 10% 5%; /* Very Dark Gray (almost black) */
+    --foreground: 0 0% 100%; /* White */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 5% 10%;
+    --card: 240 5% 10%; /* Darker Gray for cards */
+    --card-foreground: 0 0% 100%; /* White */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 5% 10%;
+    --popover: 240 5% 10%; /* Darker Gray for popovers */
+    --popover-foreground: 0 0% 100%; /* White */
 
     --primary: 0 84% 60%; /* YouTube Red */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 210 40% 96.1%; /* Light Gray */
-    --secondary-foreground: 240 5% 10%;
+    --secondary: 240 5% 20%; /* Dark Gray for secondary elements */
+    --secondary-foreground: 215 20% 80%; /* Light Gray */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 240 5% 20%; /* Dark Gray for muted elements */
+    --muted-foreground: 215 20% 65%; /* Medium Gray */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 240 5% 10%;
+    --accent: 240 5% 20%; /* Dark Gray for accent elements */
+    --accent-foreground: 0 0% 100%; /* White */
 
     --destructive: 0 84.2% 60.2%; /* Standard destructive red */
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 214.3 31.8% 91.4%; /* Light Gray Border */
-    --input: 214.3 31.8% 91.4%;
+    --border: 240 5% 25%; /* Darker Gray Border */
+    --input: 240 5% 20%; /* Dark Gray for input background */
     --ring: 0 84% 60%; /* YouTube Red */
 
     --radius: 1rem;
@@ -42,19 +42,20 @@ All colors MUST be HSL.
     /* Custom Barra Kids tokens (YouTube-inspired) */
     --youtube-red: 0 84% 60%;
     --youtube-red-dark: 0 84% 45%;
-    --youtube-dark-gray: 240 5% 15%;
-    --youtube-light-gray: 210 40% 96.1%;
+    --youtube-dark-gray: 240 5% 15%; /* For sidebar background */
+    --youtube-medium-gray: 240 5% 20%; /* For card backgrounds, input backgrounds */
+    --youtube-light-gray: 240 5% 30%; /* For borders, hover states */
     
     --gradient-hero: linear-gradient(135deg, hsl(var(--youtube-red)), hsl(var(--youtube-red-dark)));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%)); /* Keep light for cards */
+    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--card))); /* Solid dark card background */
     
-    --shadow-card: 0 4px 20px hsl(var(--youtube-red) / 0.15);
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3); /* Darker shadow for dark theme */
     --shadow-button: 0 4px 12px hsl(var(--youtube-red) / 0.25);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Sidebar colors (YouTube-like dark mode) */
-    --sidebar-background: 240 5% 15%; /* Dark Gray */
+    /* Sidebar colors (already dark, just ensuring consistency) */
+    --sidebar-background: var(--youtube-dark-gray); /* Dark Gray */
     --sidebar-foreground: 0 0% 90%; /* Light Gray */
     --sidebar-primary: 0 84% 60%; /* YouTube Red for active item */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
