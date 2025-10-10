@@ -3,47 +3,85 @@ import { Plus, Trash2, ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { AllowedContent } from "@/types"; // Importa o tipo AllowedContent
 
 interface Props {
   onSwitchToChild: () => void;
 }
 
 export default function ParentPanel({ onSwitchToChild }: Props) {
-  const [allowedUrls, setAllowedUrls] = useState<string[]>([]);
+  const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [newUrl, setNewUrl] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("barraKidsAllowedUrls");
+    const saved = localStorage.getItem("barraKidsAllowedContent");
     if (saved) {
       try {
-        setAllowedUrls(JSON.parse(saved));
+        setAllowedContent(JSON.parse(saved));
       } catch {
-        setAllowedUrls([]);
+        setAllowedContent([]);
       }
     }
   }, []);
 
-  const saveUrls = (urls: string[]) => {
-    localStorage.setItem("barraKidsAllowedUrls", JSON.stringify(urls));
-    setAllowedUrls(urls);
+  const saveContent = (content: AllowedContent[]) => {
+    localStorage.setItem("barraKidsAllowedContent", JSON.stringify(content));
+    setAllowedContent(content);
   };
 
-  const addUrl = () => {
+  const addContent = async () => {
     if (!newUrl.trim()) {
       toast.error("Digite uma URL válida");
       return;
     }
 
-    const updated = [...allowedUrls, newUrl.trim()];
-    saveUrls(updated);
-    setNewUrl("");
-    toast.success("URL adicionada com sucesso!");
+    const url = newUrl.trim();
+    let contentToAdd: AllowedContent | null = null;
+
+    // Check if it's a YouTube video URL
+    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    if (videoIdMatch) {
+      contentToAdd = { type: 'video', url: `https://www.youtube.com/watch?v=${videoIdMatch[1]}` };
+    } else {
+      // Assume it's a channel URL and try to fetch details via Edge Function
+      try {
+        toast.loading("Verificando canal...");
+        const response = await fetch("/api/fetch-youtube-channel-videos", { // Endpoint da Edge Function
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channelUrl: url }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Falha ao buscar detalhes do canal.");
+        }
+        
+        contentToAdd = { type: 'channel', id: data.channelId, name: data.channelName, url: url };
+        toast.dismiss();
+        toast.success(`Canal "${data.channelName}" adicionado com sucesso!`);
+
+      } catch (error: any) {
+        toast.dismiss();
+        toast.error(`Erro ao adicionar canal: ${error.message}`);
+        return;
+      }
+    }
+
+    if (contentToAdd) {
+      const updated = [...allowedContent, contentToAdd];
+      saveContent(updated);
+      setNewUrl("");
+      if (contentToAdd.type === 'video') {
+        toast.success("URL de vídeo adicionada com sucesso!");
+      }
+    }
   };
 
-  const removeUrl = (index: number) => {
-    const updated = allowedUrls.filter((_, i) => i !== index);
-    saveUrls(updated);
-    toast.success("URL removida");
+  const removeContent = (index: number) => {
+    const updated = allowedContent.filter((_, i) => i !== index);
+    saveContent(updated);
+    toast.success("Conteúdo removido");
   };
 
   return (
@@ -66,12 +104,12 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               type="text"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="Ex: youtube.com/watch?v=..."
+              placeholder="Ex: youtube.com/watch?v=... ou youtube.com/@canal"
               className="flex-1 rounded-xl bg-input text-foreground border-border"
-              onKeyPress={(e) => e.key === "Enter" && addUrl()}
+              onKeyPress={(e) => e.key === "Enter" && addContent()}
             />
             <Button
-              onClick={addUrl}
+              onClick={addContent}
               className="btn-kids bg-[hsl(var(--youtube-red))] text-white hover:bg-[hsl(var(--youtube-red-dark))]"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -81,21 +119,23 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
           <div className="space-y-3">
             <h2 className="text-xl font-semibold mb-3 text-foreground">
-              URLs Permitidas ({allowedUrls.length})
+              Conteúdo Permitido ({allowedContent.length})
             </h2>
-            {allowedUrls.length === 0 ? (
+            {allowedContent.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                Nenhuma URL adicionada ainda. Adicione URLs para seus filhos assistirem!
+                Nenhum conteúdo adicionado ainda. Adicione URLs para seus filhos assistirem!
               </p>
             ) : (
-              allowedUrls.map((url, index) => (
+              allowedContent.map((content, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between bg-secondary p-4 rounded-xl shadow-sm text-secondary-foreground"
                 >
-                  <span className="text-sm break-all flex-1 mr-4">{url}</span>
+                  <span className="text-sm break-all flex-1 mr-4">
+                    {content.type === 'channel' ? `Canal: ${content.name}` : `Vídeo: ${content.url}`}
+                  </span>
                   <Button
-                    onClick={() => removeUrl(index)}
+                    onClick={() => removeContent(index)}
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
