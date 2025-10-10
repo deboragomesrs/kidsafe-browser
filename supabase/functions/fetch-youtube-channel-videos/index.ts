@@ -3,6 +3,9 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
 
 serve(async (req) => {
+  console.log("Edge Function received request.");
+  console.log({ YOUTUBE_API_KEY_STATUS: !!YOUTUBE_API_KEY }); // Adicionado para depuração
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
       status: 405,
@@ -14,6 +17,7 @@ serve(async (req) => {
     const { channelId, channelUrl } = await req.json();
 
     if (!YOUTUBE_API_KEY) {
+      console.error("YouTube API Key not configured in Edge Function environment.");
       return new Response(JSON.stringify({ error: "YouTube API Key not configured" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
