@@ -1,2 +1,5 @@
 [project]
 id = "jddqrsvxwvgoosjraner"
+
+[functions]
+deno_path = "deno"
