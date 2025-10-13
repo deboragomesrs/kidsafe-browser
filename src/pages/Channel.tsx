@@ -49,9 +49,6 @@ export default function ChannelPage() {
 
   if (!data) return null;
 
-  const regularVideos = data.videos.filter(v => !v.title.toLowerCase().includes("#shorts"));
-  const shorts = data.videos.filter(v => v.title.toLowerCase().includes("#shorts"));
-
   return (
     <>
       <div className="w-full h-full flex flex-col">
@@ -59,7 +56,7 @@ export default function ChannelPage() {
           channelName={data.channelName}
           channelThumbnail={data.channelThumbnail}
           channelBannerUrl={data.channelBannerUrl}
-          videoCount={data.videos.length}
+          videoCount={data.videos.length + data.shorts.length + data.live.length}
         />
         
         <div className="p-4 md:p-6">
@@ -67,16 +64,20 @@ export default function ChannelPage() {
             <TabsList className="grid w-full grid-cols-3 h-12">
               <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
               <TabsTrigger value="shorts" className="text-base font-bold">Shorts</TabsTrigger>
-              <TabsTrigger value="live" className="text-base font-bold" disabled>Ao Vivo</TabsTrigger>
+              <TabsTrigger value="live" className="text-base font-bold" disabled={data.live.length === 0}>Ao Vivo</TabsTrigger>
             </TabsList>
             <TabsContent value="videos" className="mt-6">
-              <VideoGrid videos={regularVideos} onVideoSelect={setPlayingVideo} />
+              <VideoGrid videos={data.videos} onVideoSelect={setPlayingVideo} />
             </TabsContent>
             <TabsContent value="shorts" className="mt-6">
-              <VideoGrid videos={shorts} onVideoSelect={setPlayingVideo} />
+              <VideoGrid videos={data.shorts} onVideoSelect={setPlayingVideo} />
             </TabsContent>
              <TabsContent value="live" className="mt-6">
-              <p className="text-muted-foreground text-center py-8">Conteúdo ao vivo não está disponível no momento.</p>
+              {data.live.length > 0 ? (
+                <VideoGrid videos={data.live} onVideoSelect={setPlayingVideo} />
+              ) : (
+                <p className="text-muted-foreground text-center py-8">Nenhuma transmissão ao vivo no momento.</p>
+              )}
             </TabsContent>
           </Tabs>
         </div>

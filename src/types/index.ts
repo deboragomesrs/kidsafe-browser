@@ -7,12 +7,15 @@ export type YouTubeVideo = {
   title: string;
   thumbnail: string;
   url: string;
-  channelId?: string; // Adicionado para saber de qual canal o vídeo veio
+  channelId?: string;
 };
 
 export type ChannelDetails = {
   channelId: string;
   channelName: string;
+  channelThumbnail?: string;
   channelBannerUrl?: string;
   videos: YouTubeVideo[];
+  shorts: YouTubeVideo[];
+  live: YouTubeVideo[];
 };
