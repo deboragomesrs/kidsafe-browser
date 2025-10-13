@@ -37,6 +37,7 @@ export default function ChannelPage() {
     queryFn: ({ pageParam }) => fetchChannelDetails(channelId!, pageParam as string | undefined),
     getNextPageParam: (lastPage) => lastPage.nextPageToken,
     initialPageParam: undefined,
+    enabled: !!channelId, // Apenas executa a busca se o channelId existir
   });
 
   useEffect(() => {
@@ -79,13 +80,22 @@ export default function ChannelPage() {
     );
   }
 
-  const channelInfo = data?.pages[0];
+  if (!data || data.pages.length === 0) {
+    return (
+     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+       <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+       <h2 className="text-2xl font-bold mb-2">Canal não encontrado</h2>
+       <p className="text-muted-foreground">Não foi possível carregar os dados para este canal.</p>
+     </div>
+   );
+ }
+
+  const channelInfo = data.pages[0];
   
-  // Deduplicate videos and shorts
-  const allVideos = data?.pages.flatMap((page) => page.videos) ?? [];
+  const allVideos = data.pages.flatMap((page) => page.videos) ?? [];
   const uniqueVideos = Array.from(new Map(allVideos.map(video => [video.id, video])).values());
 
-  const allShorts = data?.pages.flatMap((page) => page.shorts) ?? [];
+  const allShorts = data.pages.flatMap((page) => page.shorts) ?? [];
   const uniqueShorts = Array.from(new Map(allShorts.map(short => [short.id, short])).values());
 
   return (
