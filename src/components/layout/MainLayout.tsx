@@ -3,13 +3,12 @@ import Sidebar from "./Sidebar";
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  onSwitchToParent: () => void;
 }
 
-export default function MainLayout({ children, onSwitchToParent }: MainLayoutProps) {
+export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header onSwitchToParent={onSwitchToParent} />
+      <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-y-auto">
