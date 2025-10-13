@@ -5,10 +5,11 @@ import { YouTubeVideo, ChannelPageData } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Loader2 } from "lucide-react";
 import VideoGrid from "@/components/VideoGrid";
-import ShortsGrid from "@/components/ShortsGrid"; // Importando o novo componente
+import ShortsGrid from "@/components/ShortsGrid";
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelHeader from "@/components/ChannelHeader";
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const fetchChannelDetails = async (channelId: string, pageToken?: string | null): Promise<ChannelPageData> => {
   const { data, error } = await supabase.functions.invoke("fetch-youtube-channel-videos", {
@@ -37,21 +38,6 @@ export default function ChannelPage() {
     getNextPageParam: (lastPage) => lastPage.nextPageToken,
     initialPageParam: undefined,
   });
-
-  const observer = useRef<IntersectionObserver>();
-  const lastElementRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (isLoading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      });
-      if (node) observer.current.observe(node);
-    },
-    [isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]
-  );
 
   if (isLoading) {
     return (
@@ -101,8 +87,16 @@ export default function ChannelPage() {
             </TabsContent>
           </Tabs>
 
-          <div ref={lastElementRef} className="h-8 flex justify-center items-center">
-            {isFetchingNextPage && <Loader2 className="w-8 h-8 animate-spin text-primary" />}
+          <div className="mt-8 flex justify-center">
+            {isFetchingNextPage ? (
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            ) : hasNextPage ? (
+              <Button onClick={() => fetchNextPage()} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80">
+                Carregar Mais
+              </Button>
+            ) : (
+              (allVideos.length > 0 || allShorts.length > 0) && <p className="text-muted-foreground">Fim dos resultados</p>
+            )}
           </div>
         </div>
       </div>
