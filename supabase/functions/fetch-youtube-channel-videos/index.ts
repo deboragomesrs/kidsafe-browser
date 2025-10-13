@@ -1,4 +1,4 @@
-// Re-deploy trigger v8 - More robust short detection and safer parsing
+// Re-deploy trigger v9 - Attempting re-deploy after environment issue
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
