@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { AllowedContent, YouTubeVideo } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,11 +24,17 @@ const fetchLatestVideo = async (channel: AllowedContent): Promise<LatestVideoRes
     return { channel, video: null };
   }
 
-  return { channel, video: data.videos?.[0] || null };
+  const latestVideo = data.videos?.[0] || null;
+  if (latestVideo) {
+    latestVideo.channelId = channel.id; // Anexando o ID do canal ao vídeo
+  }
+
+  return { channel, video: latestVideo };
 };
 
 export default function HomeView() {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const saved = localStorage.getItem("barraKidsAllowedContent");
@@ -54,6 +61,12 @@ export default function HomeView() {
     .map(q => q.data?.video)
     .filter((v): v is YouTubeVideo => v !== null && v !== undefined);
 
+  const handleVideoClick = (video: YouTubeVideo) => {
+    if (video.channelId) {
+      navigate(`/channel/${video.channelId}`);
+    }
+  };
+
   if (allowedContent.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -79,7 +92,7 @@ export default function HomeView() {
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
           </div>
         ) : (
-          <VideoGrid videos={latestVideos} />
+          <VideoGrid videos={latestVideos} onVideoSelect={handleVideoClick} />
         )}
       </div>
     </div>
