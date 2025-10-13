@@ -1,4 +1,4 @@
-// Re-deploy trigger v5 - Pagination support
+// Re-deploy trigger v6 - Stricter duration logic
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -33,7 +33,6 @@ serve(async (req) => {
     const { channelId, pageToken } = await req.json();
     if (!channelId) throw new Error("Channel ID is required.");
 
-    // 1. Pegar detalhes do canal e ID da playlist de uploads
     const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
     const channelData = await channelRes.json();
     if (!channelRes.ok || !channelData.items?.length) throw new Error("Channel details not found.");
@@ -41,11 +40,10 @@ serve(async (req) => {
     const channelDetails = channelData.items[0];
     const uploadsPlaylistId = channelDetails.contentDetails.relatedPlaylists.uploads;
 
-    // 2. Puxar os vídeos da playlist de uploads com paginação
     const playlistUrl = new URL(`https://www.googleapis.com/youtube/v3/playlistItems`);
     playlistUrl.searchParams.set('part', 'snippet');
     playlistUrl.searchParams.set('playlistId', uploadsPlaylistId);
-    playlistUrl.searchParams.set('maxResults', '50'); // Máximo permitido pela API
+    playlistUrl.searchParams.set('maxResults', '50');
     playlistUrl.searchParams.set('key', YOUTUBE_API_KEY);
     if (pageToken) {
       playlistUrl.searchParams.set('pageToken', pageToken);
@@ -58,10 +56,9 @@ serve(async (req) => {
     const nextPageToken = playlistData.nextPageToken || null;
     const videoIds = playlistData.items
       .map((item: any) => item.snippet?.resourceId?.videoId)
-      .filter(Boolean) // Filtra IDs nulos ou indefinidos
+      .filter(Boolean)
       .join(',');
 
-    // 3. Puxar detalhes dos vídeos para filtrar por duração (Shorts)
     let videosData = { items: [] };
     if (videoIds) {
       const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`);
@@ -80,7 +77,8 @@ serve(async (req) => {
         thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
-      if (durationInSeconds > 0 && durationInSeconds < 61) {
+      // Lógica ajustada: <= 60 segundos é um Short.
+      if (durationInSeconds > 0 && durationInSeconds <= 60) {
         shorts.push(videoObject);
       } else {
         videos.push(videoObject);

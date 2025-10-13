@@ -5,6 +5,7 @@ import { YouTubeVideo, ChannelPageData } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Loader2 } from "lucide-react";
 import VideoGrid from "@/components/VideoGrid";
+import ShortsGrid from "@/components/ShortsGrid"; // Importando o novo componente
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelHeader from "@/components/ChannelHeader";
 import { useState, useRef, useCallback } from "react";
@@ -96,7 +97,7 @@ export default function ChannelPage() {
               <VideoGrid videos={allVideos} onVideoSelect={setPlayingVideo} />
             </TabsContent>
             <TabsContent value="shorts" className="mt-6">
-              <VideoGrid videos={allShorts} onVideoSelect={setPlayingVideo} />
+              <ShortsGrid videos={allShorts} onVideoSelect={setPlayingVideo} />
             </TabsContent>
           </Tabs>
 
