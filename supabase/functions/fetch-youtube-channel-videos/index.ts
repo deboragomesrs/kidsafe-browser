@@ -1,4 +1,4 @@
-// Re-deploy trigger v4 - Playlist-based approach
+// Re-deploy trigger v5 - Pagination support
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -30,34 +30,44 @@ serve(async (req) => {
   }
 
   try {
-    const { channelId } = await req.json();
+    const { channelId, pageToken } = await req.json();
     if (!channelId) throw new Error("Channel ID is required.");
 
-    // 1. Pegar informações, estatísticas e a playlist de uploads do canal
+    // 1. Pegar detalhes do canal e ID da playlist de uploads
     const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
     const channelData = await channelRes.json();
     if (!channelRes.ok || !channelData.items?.length) throw new Error("Channel details not found.");
     
     const channelDetails = channelData.items[0];
     const uploadsPlaylistId = channelDetails.contentDetails.relatedPlaylists.uploads;
-    const channelName = channelDetails.snippet.title;
-    const channelThumbnail = channelDetails.snippet.thumbnails.default.url;
-    const channelBannerUrl = channelDetails.brandingSettings?.image?.bannerExternalUrl;
-    const videoCount = channelDetails.statistics?.videoCount;
 
-    // 2. Puxar os vídeos da playlist de uploads
-    const playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${YOUTUBE_API_KEY}`);
+    // 2. Puxar os vídeos da playlist de uploads com paginação
+    const playlistUrl = new URL(`https://www.googleapis.com/youtube/v3/playlistItems`);
+    playlistUrl.searchParams.set('part', 'snippet');
+    playlistUrl.searchParams.set('playlistId', uploadsPlaylistId);
+    playlistUrl.searchParams.set('maxResults', '50'); // Máximo permitido pela API
+    playlistUrl.searchParams.set('key', YOUTUBE_API_KEY);
+    if (pageToken) {
+      playlistUrl.searchParams.set('pageToken', pageToken);
+    }
+    
+    const playlistRes = await fetch(playlistUrl.toString());
     const playlistData = await playlistRes.json();
     if (!playlistRes.ok) throw new Error("Failed to fetch playlist items.");
 
+    const nextPageToken = playlistData.nextPageToken || null;
     const videoIds = playlistData.items
-      .map((item: any) => item.snippet.resourceId.videoId)
+      .map((item: any) => item.snippet?.resourceId?.videoId)
+      .filter(Boolean) // Filtra IDs nulos ou indefinidos
       .join(',');
 
     // 3. Puxar detalhes dos vídeos para filtrar por duração (Shorts)
-    const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`);
-    const videosData = await videosRes.json();
-    if (!videosRes.ok) throw new Error("Failed to fetch video details.");
+    let videosData = { items: [] };
+    if (videoIds) {
+      const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`);
+      if (!videosRes.ok) throw new Error("Failed to fetch video details.");
+      videosData = await videosRes.json();
+    }
 
     const videos: any[] = [];
     const shorts: any[] = [];
@@ -77,28 +87,18 @@ serve(async (req) => {
       }
     });
 
-    // 4. Puxar vídeos Ao Vivo (continua o mesmo método)
-    const liveRes = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&type=video&eventType=live`);
-    const liveData = await liveRes.json();
-    if (!liveRes.ok) throw new Error("Failed to search for live streams.");
-
-    const live = liveData.items.map((item: any) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
-      url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-    }));
-
-    return new Response(JSON.stringify({
+    const responsePayload = {
       channelId,
-      channelName,
-      channelThumbnail,
-      channelBannerUrl,
-      videoCount,
+      channelName: channelDetails.snippet.title,
+      channelThumbnail: channelDetails.snippet.thumbnails.default.url,
+      channelBannerUrl: channelDetails.brandingSettings?.image?.bannerExternalUrl,
+      videoCount: channelDetails.statistics?.videoCount,
       videos,
       shorts,
-      live,
-    }), {
+      nextPageToken,
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 

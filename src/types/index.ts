@@ -10,7 +10,7 @@ export type YouTubeVideo = {
   channelId?: string;
 };
 
-export type ChannelDetails = {
+export type ChannelPageData = {
   channelId: string;
   channelName: string;
   channelThumbnail?: string;
@@ -18,5 +18,5 @@ export type ChannelDetails = {
   videoCount?: number;
   videos: YouTubeVideo[];
   shorts: YouTubeVideo[];
-  live: YouTubeVideo[];
+  nextPageToken?: string | null;
 };
