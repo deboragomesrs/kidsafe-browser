@@ -1,4 +1,4 @@
-// Re-deploy trigger v7 - Better logging and duration parsing
+// Re-deploy trigger v8 - More robust short detection and safer parsing
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -8,7 +8,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function parseDuration(isoDuration: string): number {
+function parseDuration(isoDuration?: string): number {
+  if (!isoDuration) return 0;
   const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
   const matches = isoDuration.match(regex);
   if (!matches) return 0;
@@ -68,28 +69,27 @@ serve(async (req) => {
 
     const videos: any[] = [];
     const shorts: any[] = [];
-    const debugLog: any[] = [];
 
     videosData.items.forEach((item: any) => {
-      const durationInSeconds = parseDuration(item.contentDetails.duration);
+      const durationInSeconds = parseDuration(item.contentDetails?.duration);
+      const title = item.snippet?.title || '';
+      
       const videoObject = {
         id: item.id,
-        title: item.snippet.title,
+        title: title,
         thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
       
-      const classification = (durationInSeconds > 0 && durationInSeconds <= 60) ? 'Short' : 'Video';
-      debugLog.push({ id: item.id, title: item.snippet.title, durationISO: item.contentDetails.duration, durationSec: durationInSeconds, classification });
+      // More robust classification: check for #shorts tag OR duration <= 60s
+      const isShort = title.toLowerCase().includes('#shorts') || (durationInSeconds > 0 && durationInSeconds <= 60);
 
-      if (classification === 'Short') {
+      if (isShort) {
         shorts.push(videoObject);
       } else {
         videos.push(videoObject);
       }
     });
-
-    console.log("Processed videos:", debugLog);
 
     const responsePayload = {
       channelId,

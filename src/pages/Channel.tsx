@@ -47,7 +47,7 @@ export default function ChannelPage() {
           fetchNextPage();
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.1 } // <-- Aumentando a sensibilidade do "sensor"
     );
 
     const currentRef = loadMoreRef.current;
