@@ -62,7 +62,6 @@ export default function ChannelPage() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // 1. Handle loading state (query is running or channelId is not yet available)
   if (isLoading || !channelId) {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -71,7 +70,6 @@ export default function ChannelPage() {
     );
   }
 
-  // 2. Handle error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -82,7 +80,6 @@ export default function ChannelPage() {
     );
   }
 
-  // 3. Handle no data state (query finished but returned nothing valid)
   if (!data || data.pages.length === 0 || !data.pages[0]) {
     return (
      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -93,13 +90,12 @@ export default function ChannelPage() {
    );
   }
 
-  // 4. If we get here, we have data.
   const channelInfo = data.pages[0];
   
-  const allVideos = data.pages.flatMap((page) => page.videos) ?? [];
+  const allVideos = data.pages.flatMap((page) => page?.videos || []);
   const uniqueVideos = Array.from(new Map(allVideos.map(video => [video.id, video])).values());
 
-  const allShorts = data.pages.flatMap((page) => page.shorts) ?? [];
+  const allShorts = data.pages.flatMap((page) => page?.shorts || []);
   const uniqueShorts = Array.from(new Map(allShorts.map(short => [short.id, short])).values());
 
   return (
