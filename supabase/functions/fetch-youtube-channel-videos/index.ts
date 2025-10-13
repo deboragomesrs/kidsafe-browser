@@ -1,4 +1,4 @@
-// Acionando a reimplantação para buscar vídeos por popularidade
+// Forçando a reimplantação para buscar vídeos por popularidade (viewCount)
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -60,7 +60,7 @@ serve(async (req) => {
     );
     const channelData = await channelRes.json();
 
-    if (!channelRes.ok || !channelData.items || channelData.items.length === 0) {
+    if (!channelRes.ok || !channelData.items || !channelData.items.length === 0) {
       console.error("YouTube API Error (Channel Details):", channelData);
       throw new Error("Detalhes do canal não encontrados.");
     }
