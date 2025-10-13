@@ -8,8 +8,7 @@ import VideoGrid from "@/components/VideoGrid";
 import ShortsGrid from "@/components/ShortsGrid";
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelHeader from "@/components/ChannelHeader";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useRef, useEffect } from "react";
 
 const fetchChannelDetails = async (channelId: string, pageToken?: string | null): Promise<ChannelPageData> => {
   const { data, error } = await supabase.functions.invoke("fetch-youtube-channel-videos", {
@@ -24,6 +23,7 @@ const fetchChannelDetails = async (channelId: string, pageToken?: string | null)
 export default function ChannelPage() {
   const { channelId } = useParams<{ channelId: string }>();
   const [playingVideo, setPlayingVideo] = useState<YouTubeVideo | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const {
     data,
@@ -38,6 +38,28 @@ export default function ChannelPage() {
     getNextPageParam: (lastPage) => lastPage.nextPageToken,
     initialPageParam: undefined,
   });
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
     return (
@@ -58,8 +80,13 @@ export default function ChannelPage() {
   }
 
   const channelInfo = data?.pages[0];
+  
+  // Deduplicate videos and shorts
   const allVideos = data?.pages.flatMap((page) => page.videos) ?? [];
+  const uniqueVideos = Array.from(new Map(allVideos.map(video => [video.id, video])).values());
+
   const allShorts = data?.pages.flatMap((page) => page.shorts) ?? [];
+  const uniqueShorts = Array.from(new Map(allShorts.map(short => [short.id, short])).values());
 
   return (
     <>
@@ -77,26 +104,22 @@ export default function ChannelPage() {
           <Tabs defaultValue="videos" className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-12">
               <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
-              <TabsTrigger value="shorts" className="text-base font-bold" disabled={allShorts.length === 0}>Shorts</TabsTrigger>
+              <TabsTrigger value="shorts" className="text-base font-bold" disabled={uniqueShorts.length === 0}>Shorts</TabsTrigger>
             </TabsList>
             <TabsContent value="videos" className="mt-6">
-              <VideoGrid videos={allVideos} onVideoSelect={setPlayingVideo} />
+              <VideoGrid videos={uniqueVideos} onVideoSelect={setPlayingVideo} />
             </TabsContent>
             <TabsContent value="shorts" className="mt-6">
-              <ShortsGrid videos={allShorts} onVideoSelect={setPlayingVideo} />
+              <ShortsGrid videos={uniqueShorts} onVideoSelect={setPlayingVideo} />
             </TabsContent>
           </Tabs>
 
-          <div className="mt-8 flex justify-center">
+          <div ref={loadMoreRef} className="flex justify-center py-8">
             {isFetchingNextPage ? (
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            ) : hasNextPage ? (
-              <Button onClick={() => fetchNextPage()} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80">
-                Carregar Mais
-              </Button>
-            ) : (
-              (allVideos.length > 0 || allShorts.length > 0) && <p className="text-muted-foreground">Fim dos resultados</p>
-            )}
+            ) : !hasNextPage && (uniqueVideos.length > 0 || uniqueShorts.length > 0) ? (
+              <p className="text-muted-foreground">Fim dos resultados</p>
+            ) : null}
           </div>
         </div>
       </div>
