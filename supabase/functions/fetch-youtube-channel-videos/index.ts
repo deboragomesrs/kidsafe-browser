@@ -1,4 +1,4 @@
-// Re-deploy trigger v6 - Stricter duration logic
+// Re-deploy trigger v7 - Better logging and duration parsing
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -68,6 +68,7 @@ serve(async (req) => {
 
     const videos: any[] = [];
     const shorts: any[] = [];
+    const debugLog: any[] = [];
 
     videosData.items.forEach((item: any) => {
       const durationInSeconds = parseDuration(item.contentDetails.duration);
@@ -77,13 +78,18 @@ serve(async (req) => {
         thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
-      // Lógica ajustada: <= 60 segundos é um Short.
-      if (durationInSeconds > 0 && durationInSeconds <= 60) {
+      
+      const classification = (durationInSeconds > 0 && durationInSeconds <= 60) ? 'Short' : 'Video';
+      debugLog.push({ id: item.id, title: item.snippet.title, durationISO: item.contentDetails.duration, durationSec: durationInSeconds, classification });
+
+      if (classification === 'Short') {
         shorts.push(videoObject);
       } else {
         videos.push(videoObject);
       }
     });
+
+    console.log("Processed videos:", debugLog);
 
     const responsePayload = {
       channelId,
