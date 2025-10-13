@@ -1,19 +1,24 @@
-import { Search, Bell, Cast, LogIn, LogOut } from "lucide-react";
+import { Search, Bell, Cast, LogIn, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
-import MobileSidebar from "./MobileSidebar";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const { user, login, logout } = useAuth();
 
   return (
     <header className="bg-background text-white p-2 md:p-4 shadow-lg flex items-center justify-between gap-4">
       <div className="flex items-center gap-2">
-        <MobileSidebar />
+        <Button onClick={onMenuClick} variant="ghost" size="icon">
+          <Menu className="w-5 h-5" />
+        </Button>
         <NavLink to="/" className="flex items-center gap-3">
           <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-xl font-bold hidden sm:block">Barra Kids</h1>
