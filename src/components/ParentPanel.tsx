@@ -13,6 +13,7 @@ interface Props {
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [newUrl, setNewUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("barraKidsAllowedContent");
@@ -31,20 +32,18 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
   };
 
   const addContent = async () => {
-    if (!newUrl.trim()) {
-      toast.error("Digite uma URL válida");
+    if (!newUrl.trim() || isLoading) {
       return;
     }
+    setIsLoading(true);
 
     const url = newUrl.trim();
     let contentToAdd: AllowedContent | null = null;
 
-    // Check if it's a YouTube video URL
     const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
     if (videoIdMatch) {
       contentToAdd = { type: 'video', url: `https://www.youtube.com/watch?v=${videoIdMatch[1]}` };
     } else {
-      // Assume it's a channel URL and try to fetch details via Edge Function
       try {
         toast.loading("Verificando canal...");
         
@@ -52,21 +51,24 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
           body: { channelUrl: url }
         });
 
-        if (error) {
-          throw new Error(error.message || "Falha ao buscar detalhes do canal.");
-        }
-        
-        if (!data || !data.channelId) {
-          throw new Error("Resposta inválida do servidor.");
-        }
-        
-        contentToAdd = { type: 'channel', id: data.channelId, name: data.channelName, url: url };
         toast.dismiss();
-        toast.success(`Canal "${data.channelName}" adicionado com sucesso!`);
+
+        if (error) throw new Error(error.message || "Falha ao buscar detalhes do canal.");
+        if (!data || !data.channelId) throw new Error("Resposta inválida do servidor.");
+        
+        contentToAdd = { 
+          type: 'channel', 
+          id: data.channelId, 
+          name: data.channelName, 
+          url: url,
+          thumbnail: data.channelThumbnail
+        };
+        toast.success(`Canal "${data.channelName}" adicionado!`);
 
       } catch (error: any) {
         toast.dismiss();
-        toast.error(`Erro ao adicionar canal: ${error.message}`);
+        toast.error(`Erro: ${error.message}`);
+        setIsLoading(false);
         return;
       }
     }
@@ -76,9 +78,10 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       saveContent(updated);
       setNewUrl("");
       if (contentToAdd.type === 'video') {
-        toast.success("URL de vídeo adicionada com sucesso!");
+        toast.success("URL de vídeo adicionada!");
       }
     }
+    setIsLoading(false);
   };
 
   const removeContent = (index: number) => {
@@ -92,8 +95,8 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       <div className="container mx-auto max-w-4xl">
         <div className="card-kids mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-8 h-8 text-[hsl(var(--youtube-red))]" />
-            <h1 className="text-3xl font-bold text-[hsl(var(--youtube-red))]">
+            <Shield className="w-8 h-8 text-primary" />
+            <h1 className="text-3xl font-bold text-primary">
               Painel dos Pais
             </h1>
           </div>
@@ -110,13 +113,15 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               placeholder="Ex: youtube.com/watch?v=... ou youtube.com/@canal"
               className="flex-1 rounded-xl bg-input text-foreground border-border"
               onKeyPress={(e) => e.key === "Enter" && addContent()}
+              disabled={isLoading}
             />
             <Button
               onClick={addContent}
-              className="btn-kids bg-[hsl(var(--youtube-red))] text-white hover:bg-[hsl(var(--youtube-red-dark))]"
+              className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80"
+              disabled={isLoading}
             >
               <Plus className="w-5 h-5 mr-2" />
-              Adicionar
+              {isLoading ? "Adicionando..." : "Adicionar"}
             </Button>
           </div>
 
@@ -126,22 +131,27 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
             </h2>
             {allowedContent.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                Nenhum conteúdo adicionado ainda. Adicione URLs para seus filhos assistirem!
+                Nenhum conteúdo adicionado ainda.
               </p>
             ) : (
               allowedContent.map((content, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between bg-secondary p-4 rounded-xl shadow-sm text-secondary-foreground"
+                  className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm"
                 >
-                  <span className="text-sm break-all flex-1 mr-4">
-                    {content.type === 'channel' ? `Canal: ${content.name}` : `Vídeo: ${content.url}`}
-                  </span>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {content.type === 'channel' && content.thumbnail && (
+                      <img src={content.thumbnail} alt={content.name} className="w-8 h-8 rounded-full" />
+                    )}
+                    <span className="text-sm truncate text-secondary-foreground">
+                      {content.type === 'channel' ? `Canal: ${content.name}` : `Vídeo: ${content.url}`}
+                    </span>
+                  </div>
                   <Button
                     onClick={() => removeContent(index)}
                     variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -153,7 +163,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
         <Button
           onClick={onSwitchToChild}
-          className="btn-kids bg-[hsl(var(--youtube-red))] text-white hover:bg-[hsl(var(--youtube-red-dark))] w-full"
+          className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Voltar para Modo Criança

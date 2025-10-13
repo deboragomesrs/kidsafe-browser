@@ -8,3 +8,10 @@ export type YouTubeVideo = {
   thumbnail: string;
   url: string;
 };
+
+export type ChannelDetails = {
+  channelId: string;
+  channelName: string;
+  channelBannerUrl?: string;
+  videos: YouTubeVideo[];
+};

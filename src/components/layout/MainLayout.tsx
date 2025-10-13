@@ -8,11 +8,11 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children, onSwitchToParent }: MainLayoutProps) {
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-background">
       <Header onSwitchToParent={onSwitchToParent} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-background"> {/* Fundo principal agora é dark */}
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

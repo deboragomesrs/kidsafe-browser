@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import barraKidsLogo from "@/assets/barra-kids-logo.jpeg"; // Importa o novo logo
-import SafeBrowser from "./SafeBrowser";
+import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
+import HomeView from "./HomeView";
 
 export default function ChildView() {
   const [showWelcome, setShowWelcome] = useState(true);
@@ -12,7 +12,7 @@ export default function ChildView() {
 
   if (showWelcome) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-black p-8 animate-fade-in"> {/* Fundo preto */}
+      <div className="w-full h-full flex flex-col items-center justify-center bg-black p-8 animate-fade-in">
         <img 
           src={barraKidsLogo} 
           alt="Barra Kids Logo" 
@@ -30,7 +30,7 @@ export default function ChildView() {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <SafeBrowser />
+      <HomeView />
     </div>
   );
 }
