@@ -37,7 +37,7 @@ export default function ChannelPage() {
     queryFn: ({ pageParam }) => fetchChannelDetails(channelId!, pageParam as string | undefined),
     getNextPageParam: (lastPage) => lastPage.nextPageToken,
     initialPageParam: undefined,
-    enabled: !!channelId, // Apenas executa a busca se o channelId existir
+    enabled: !!channelId,
   });
 
   useEffect(() => {
@@ -62,14 +62,16 @@ export default function ChannelPage() {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  // 1. Handle loading state (query is running or channelId is not yet available)
+  if (isLoading || !channelId) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
 
+  // 2. Handle error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -80,7 +82,8 @@ export default function ChannelPage() {
     );
   }
 
-  if (!data || data.pages.length === 0) {
+  // 3. Handle no data state (query finished but returned nothing valid)
+  if (!data || data.pages.length === 0 || !data.pages[0]) {
     return (
      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
        <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -88,8 +91,9 @@ export default function ChannelPage() {
        <p className="text-muted-foreground">Não foi possível carregar os dados para este canal.</p>
      </div>
    );
- }
+  }
 
+  // 4. If we get here, we have data.
   const channelInfo = data.pages[0];
   
   const allVideos = data.pages.flatMap((page) => page.videos) ?? [];
@@ -101,14 +105,12 @@ export default function ChannelPage() {
   return (
     <>
       <div className="w-full h-full flex flex-col">
-        {channelInfo && (
-          <ChannelHeader 
-            channelName={channelInfo.channelName}
-            channelThumbnail={channelInfo.channelThumbnail}
-            channelBannerUrl={channelInfo.channelBannerUrl}
-            videoCount={channelInfo.videoCount || 0}
-          />
-        )}
+        <ChannelHeader 
+          channelName={channelInfo.channelName}
+          channelThumbnail={channelInfo.channelThumbnail}
+          channelBannerUrl={channelInfo.channelBannerUrl}
+          videoCount={channelInfo.videoCount || 0}
+        />
         
         <div className="p-4 md:p-6">
           <Tabs defaultValue="videos" className="w-full">
