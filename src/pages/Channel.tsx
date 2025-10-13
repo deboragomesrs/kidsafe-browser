@@ -49,6 +49,12 @@ export default function ChannelPage() {
 
   if (!data) return null;
 
+  // Garante que as listas existam para evitar erros
+  const videos = data.videos || [];
+  const shorts = data.shorts || [];
+  const live = data.live || [];
+  const totalVideoCount = videos.length + shorts.length + live.length;
+
   return (
     <>
       <div className="w-full h-full flex flex-col">
@@ -56,25 +62,25 @@ export default function ChannelPage() {
           channelName={data.channelName}
           channelThumbnail={data.channelThumbnail}
           channelBannerUrl={data.channelBannerUrl}
-          videoCount={data.videos.length + data.shorts.length + data.live.length}
+          videoCount={totalVideoCount}
         />
         
         <div className="p-4 md:p-6">
           <Tabs defaultValue="videos" className="w-full">
             <TabsList className="grid w-full grid-cols-3 h-12">
               <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
-              <TabsTrigger value="shorts" className="text-base font-bold">Shorts</TabsTrigger>
-              <TabsTrigger value="live" className="text-base font-bold" disabled={data.live.length === 0}>Ao Vivo</TabsTrigger>
+              <TabsTrigger value="shorts" className="text-base font-bold" disabled={shorts.length === 0}>Shorts</TabsTrigger>
+              <TabsTrigger value="live" className="text-base font-bold" disabled={live.length === 0}>Ao Vivo</TabsTrigger>
             </TabsList>
             <TabsContent value="videos" className="mt-6">
-              <VideoGrid videos={data.videos} onVideoSelect={setPlayingVideo} />
+              <VideoGrid videos={videos} onVideoSelect={setPlayingVideo} />
             </TabsContent>
             <TabsContent value="shorts" className="mt-6">
-              <VideoGrid videos={data.shorts} onVideoSelect={setPlayingVideo} />
+              <VideoGrid videos={shorts} onVideoSelect={setPlayingVideo} />
             </TabsContent>
              <TabsContent value="live" className="mt-6">
-              {data.live.length > 0 ? (
-                <VideoGrid videos={data.live} onVideoSelect={setPlayingVideo} />
+              {live.length > 0 ? (
+                <VideoGrid videos={live} onVideoSelect={setPlayingVideo} />
               ) : (
                 <p className="text-muted-foreground text-center py-8">Nenhuma transmissão ao vivo no momento.</p>
               )}
