@@ -1,4 +1,4 @@
-// Re-deploy trigger v3
+// Re-deploy trigger v4 - Playlist-based approach
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -33,23 +33,26 @@ serve(async (req) => {
     const { channelId } = await req.json();
     if (!channelId) throw new Error("Channel ID is required.");
 
-    // 1. Pegar informações e estatísticas do canal
-    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
+    // 1. Pegar informações, estatísticas e a playlist de uploads do canal
+    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
     const channelData = await channelRes.json();
     if (!channelRes.ok || !channelData.items?.length) throw new Error("Channel details not found.");
     
     const channelDetails = channelData.items[0];
+    const uploadsPlaylistId = channelDetails.contentDetails.relatedPlaylists.uploads;
     const channelName = channelDetails.snippet.title;
     const channelThumbnail = channelDetails.snippet.thumbnails.default.url;
     const channelBannerUrl = channelDetails.brandingSettings?.image?.bannerExternalUrl;
     const videoCount = channelDetails.statistics?.videoCount;
 
-    // 2. Puxar vídeos (geral, em alta)
-    const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&order=viewCount&type=video&maxResults=50`);
-    const searchData = await searchRes.json();
-    if (!searchRes.ok) throw new Error("Failed to search for videos.");
+    // 2. Puxar os vídeos da playlist de uploads
+    const playlistRes = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${YOUTUBE_API_KEY}`);
+    const playlistData = await playlistRes.json();
+    if (!playlistRes.ok) throw new Error("Failed to fetch playlist items.");
 
-    const videoIds = searchData.items.map((item: any) => item.id.videoId).join(',');
+    const videoIds = playlistData.items
+      .map((item: any) => item.snippet.resourceId.videoId)
+      .join(',');
 
     // 3. Puxar detalhes dos vídeos para filtrar por duração (Shorts)
     const videosRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`);
@@ -74,7 +77,7 @@ serve(async (req) => {
       }
     });
 
-    // 4. Puxar vídeos Ao Vivo
+    // 4. Puxar vídeos Ao Vivo (continua o mesmo método)
     const liveRes = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&type=video&eventType=live`);
     const liveData = await liveRes.json();
     if (!liveRes.ok) throw new Error("Failed to search for live streams.");
