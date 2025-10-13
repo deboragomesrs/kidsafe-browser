@@ -1,4 +1,4 @@
-// Acionando a reimplantação para corrigir o erro de 'project ref'
+// Acionando a reimplantação para buscar vídeos por popularidade
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -66,28 +66,28 @@ serve(async (req) => {
     }
 
     const channelDetails = channelData.items[0];
-    const uploadsPlaylistId = channelDetails.contentDetails.relatedPlaylists.uploads;
     channelName = channelDetails.snippet.title;
     channelThumbnail = channelDetails.snippet.thumbnails.default.url;
     const channelBannerUrl = channelDetails.brandingSettings?.image?.bannerExternalUrl;
 
-    const playlistRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${YOUTUBE_API_KEY}`
+    // Alterado para buscar os vídeos mais populares usando a API de Pesquisa
+    const searchRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${finalChannelId}&order=viewCount&type=video&maxResults=50&key=${YOUTUBE_API_KEY}`
     );
-    const playlistData = await playlistRes.json();
+    const searchData = await searchRes.json();
 
-    if (!playlistRes.ok) {
-      console.error("YouTube API Error (Playlist):", playlistData);
-      throw new Error("Falha ao buscar os vídeos do canal.");
+    if (!searchRes.ok) {
+      console.error("YouTube API Error (Search):", searchData);
+      throw new Error("Falha ao buscar os vídeos mais populares do canal.");
     }
 
-    const videos = (playlistData.items || [])
-      .filter((item: any) => item.snippet?.resourceId?.kind === "youtube#video")
+    const videos = (searchData.items || [])
+      .filter((item: any) => item.id?.kind === "youtube#video")
       .map((item: any) => ({
-        id: item.snippet.resourceId.videoId,
+        id: item.id.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
-        url: `https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
       }));
 
     return new Response(JSON.stringify({ 
