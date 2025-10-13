@@ -15,6 +15,7 @@ export type ChannelDetails = {
   channelName: string;
   channelThumbnail?: string;
   channelBannerUrl?: string;
+  videoCount?: number;
   videos: YouTubeVideo[];
   shorts: YouTubeVideo[];
   live: YouTubeVideo[];

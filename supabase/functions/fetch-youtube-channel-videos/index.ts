@@ -1,4 +1,4 @@
-// Re-deploy trigger
+// Re-deploy trigger v3
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -8,17 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper para converter duração ISO 8601 para segundos
 function parseDuration(isoDuration: string): number {
   const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
   const matches = isoDuration.match(regex);
-
   if (!matches) return 0;
-
   const hours = parseInt(matches[1] || '0');
   const minutes = parseInt(matches[2] || '0');
   const seconds = parseInt(matches[3] || '0');
-
   return hours * 3600 + minutes * 60 + seconds;
 }
 
@@ -37,8 +33,8 @@ serve(async (req) => {
     const { channelId } = await req.json();
     if (!channelId) throw new Error("Channel ID is required.");
 
-    // 1. Pegar informações do canal
-    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`);
+    // 1. Pegar informações e estatísticas do canal
+    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
     const channelData = await channelRes.json();
     if (!channelRes.ok || !channelData.items?.length) throw new Error("Channel details not found.");
     
@@ -46,6 +42,7 @@ serve(async (req) => {
     const channelName = channelDetails.snippet.title;
     const channelThumbnail = channelDetails.snippet.thumbnails.default.url;
     const channelBannerUrl = channelDetails.brandingSettings?.image?.bannerExternalUrl;
+    const videoCount = channelDetails.statistics?.videoCount;
 
     // 2. Puxar vídeos (geral, em alta)
     const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${channelId}&part=snippet&order=viewCount&type=video&maxResults=50`);
@@ -94,6 +91,7 @@ serve(async (req) => {
       channelName,
       channelThumbnail,
       channelBannerUrl,
+      videoCount,
       videos,
       shorts,
       live,

@@ -49,11 +49,10 @@ export default function ChannelPage() {
 
   if (!data) return null;
 
-  // Garante que as listas existam para evitar erros
   const videos = data.videos || [];
   const shorts = data.shorts || [];
   const live = data.live || [];
-  const totalVideoCount = videos.length + shorts.length + live.length;
+  const totalVideoCount = data.videoCount || (videos.length + shorts.length + live.length);
 
   return (
     <>
