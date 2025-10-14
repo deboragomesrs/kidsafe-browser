@@ -98,6 +98,10 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       if (contentToAdd.type === 'video') {
         toast.success("URL de vídeo adicionada!");
       }
+      // Redireciona para a tela da criança após 1 segundo
+      setTimeout(() => {
+        onSwitchToChild();
+      }, 1000);
     }
     setIsLoading(false);
   };
