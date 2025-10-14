@@ -1,33 +1,12 @@
-import { useState, useEffect } from "react";
-import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
 import HomeView from "./HomeView";
 
-export default function ChildView() {
-  const [showWelcome, setShowWelcome] = useState(true);
+interface Props {
+  onEnterParentMode?: () => void;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowWelcome(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (showWelcome) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-black p-8 animate-fade-in">
-        <img 
-          src={barraKidsLogo} 
-          alt="Barra Kids Logo" 
-          className="w-64 h-auto mb-8 animate-bounce-slow"
-        />
-        <h1 className="text-4xl md:text-6xl font-bold text-white text-center mb-4">
-          Bem-vindo ao BARRA KIDS!
-        </h1>
-        <p className="text-xl md:text-2xl text-white/90 text-center max-w-2xl">
-          Sua plataforma para assistir conteúdo seguro.
-        </p>
-      </div>
-    );
-  }
-
+export default function ChildView({ onEnterParentMode }: Props) {
+  // O cabeçalho agora é global no MainLayout, então não precisamos mais do onEnterParentMode aqui diretamente,
+  // mas a estrutura está pronta se precisarmos de um botão dentro desta view no futuro.
   return (
     <div className="w-full h-full flex flex-col">
       <HomeView />

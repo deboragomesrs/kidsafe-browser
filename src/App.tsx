@@ -7,8 +7,29 @@ import Index from "./pages/Index";
 import ChannelPage from "./pages/Channel";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./components/layout/MainLayout";
+import { useState } from "react";
 
 const queryClient = new QueryClient();
+
+// Componente para gerenciar o estado que precisa ser compartilhado entre a página e o layout
+const AppLayout = () => {
+  const [isParentPanelUnlocked, setIsParentPanelUnlocked] = useState(false);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+
+  const contextValue = {
+    isParentPanelUnlocked,
+    setIsParentPanelUnlocked,
+    showPinDialog,
+    setShowPinDialog,
+  };
+
+  return (
+    <MainLayout>
+      <Outlet context={contextValue} />
+    </MainLayout>
+  );
+};
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

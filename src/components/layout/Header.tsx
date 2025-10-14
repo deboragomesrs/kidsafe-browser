@@ -1,4 +1,4 @@
-import { Search, Bell, Cast, LogIn, LogOut, Menu } from "lucide-react";
+import { Search, Bell, Cast, LogIn, LogOut, Menu, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
 import { NavLink } from "react-router-dom";
@@ -8,9 +8,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  onEnterParentMode?: () => void;
 }
 
-export default function Header({ onMenuClick }: HeaderProps) {
+export default function Header({ onMenuClick, onEnterParentMode }: HeaderProps) {
   const { user, login, logout } = useAuth();
 
   return (
@@ -29,12 +30,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <Button variant="ghost" size="icon">
           <Search className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="icon">
-          <Bell className="w-5 h-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Cast className="w-5 h-5" />
-        </Button>
+        
+        {user && (
+          <Button onClick={onEnterParentMode} variant="ghost" size="icon">
+            <Lock className="w-5 h-5" />
+          </Button>
+        )}
         
         {user ? (
           <DropdownMenu>

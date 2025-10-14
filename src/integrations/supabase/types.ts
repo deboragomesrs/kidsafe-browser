@@ -14,7 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          id: string
+          parental_pin: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id: string
+          parental_pin?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          parental_pin?: string | null
+          updated_at?: string | null
+        }
+      }
+      allowed_content: {
+        Row: {
+          id: number
+          user_id: string
+          type: "channel" | "video"
+          content_id: string | null
+          name: string | null
+          url: string | null
+          thumbnail_url: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          type: "channel" | "video"
+          content_id?: string | null
+          name?: string | null
+          url?: string | null
+          thumbnail_url?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          type?: "channel" | "video"
+          content_id?: string | null
+          name?: string | null
+          url?: string | null
+          thumbnail_url?: string | null
+          created_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

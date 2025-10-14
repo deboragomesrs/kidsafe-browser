@@ -1,6 +1,12 @@
-export type AllowedContent =
-  | { type: 'video'; url: string; title?: string; thumbnail?: string }
-  | { type: 'channel'; id: string; name: string; url?: string; thumbnail?: string };
+export type AllowedContent = {
+  id: number;
+  user_id: string;
+  type: 'channel' | 'video';
+  content_id: string | null;
+  name: string | null;
+  url: string | null;
+  thumbnail_url: string | null;
+};
 
 export type YouTubeVideo = {
   id: string;

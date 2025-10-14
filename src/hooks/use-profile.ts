@@ -1,0 +1,59 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+
+// Fetch user profile
+const fetchProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+// Update user profile (e.g., set PIN)
+const updateProfile = async ({ userId, updates }: { userId: string, updates: { parental_pin: string } }) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+export const useProfile = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: () => fetchProfile(user!.id),
+    enabled: !!user,
+  });
+
+  const mutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (data) => {
+      // Invalidate and refetch the profile query to get fresh data
+      queryClient.invalidateQueries({ queryKey: ['profile', data?.id] });
+    },
+  });
+
+  return {
+    profile,
+    isLoading,
+    error,
+    updateProfile: mutation.mutate,
+    isUpdating: mutation.isPending,
+  };
+};
