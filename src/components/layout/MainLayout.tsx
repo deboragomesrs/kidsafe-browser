@@ -10,38 +10,46 @@ import { useProfile } from "@/hooks/use-profile";
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Centralizing state management here
   const { user, loading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useProfile();
   
-  const [isParentPanelUnlocked, setIsParentPanelUnlocked] = useState(false);
+  // Este estado agora controla se o "fluxo parental" está ativo (seja para setup ou para gerenciar)
+  const [isParentalFlowActive, setIsParentalFlowActive] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
 
   const handleEnterParentMode = () => {
-    if (!user) return; // Should not happen if button is visible, but good practice
+    if (!user) return;
+    
+    // Se o perfil ainda está carregando, não faz nada para evitar estados inconsistentes
+    if (profileLoading) return;
+
     if (profile && profile.parental_pin) {
+      // Se já tem PIN, abre o diálogo para digitar
       setShowPinDialog(true);
     } else {
-      // If no PIN is set, go directly to setup
-      setIsParentPanelUnlocked(true);
+      // Se NÃO tem PIN, ativa o fluxo parental, que vai levar direto para a tela de setup
+      setIsParentalFlowActive(true);
     }
   };
 
   const handlePinSuccess = () => {
     setShowPinDialog(false);
-    setIsParentPanelUnlocked(true);
+    // Após o PIN correto, ativa o fluxo parental
+    setIsParentalFlowActive(true);
   };
 
   const handleExitParentMode = () => {
-    setIsParentPanelUnlocked(false);
+    // Desativa o fluxo parental e volta para a visão da criança
+    setIsParentalFlowActive(false);
   };
 
+  // Passa o estado e as funções para as páginas filhas (Index, etc.) através do Outlet
   const contextValue = {
     user,
     authLoading,
     profile,
     profileLoading,
-    isParentPanelUnlocked,
+    isParentalFlowActive,
     handleExitParentMode,
   };
 

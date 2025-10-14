@@ -11,7 +11,7 @@ interface IndexContext {
   authLoading: boolean;
   profile: Tables<'profiles'> | null;
   profileLoading: boolean;
-  isParentPanelUnlocked: boolean;
+  isParentalFlowActive: boolean;
   handleExitParentMode: () => void;
 }
 
@@ -21,7 +21,7 @@ export default function Index() {
     authLoading, 
     profile, 
     profileLoading, 
-    isParentPanelUnlocked, 
+    isParentalFlowActive, 
     handleExitParentMode 
   } = useOutletContext<IndexContext>();
   
@@ -33,20 +33,18 @@ export default function Index() {
     );
   }
 
-  // Se o usuário está logado
-  if (user) {
-    // Se o painel parental está desbloqueado (pelo PIN ou para setup)
-    if (isParentPanelUnlocked) {
-      // Se não tem PIN, mostra a tela de setup. Senão, o painel normal.
-      return profile && !profile.parental_pin 
-        ? <PinSetup /> 
-        : <ParentPanel onSwitchToChild={handleExitParentMode} />;
+  // Se o fluxo parental foi ativado (pelo clique no cadeado ou por um PIN bem-sucedido)
+  if (isParentalFlowActive) {
+    // Verifica se o perfil existe e se o PIN está definido
+    if (profile && profile.parental_pin) {
+      // Se tem PIN, mostra o painel de gerenciamento
+      return <ParentPanel onSwitchToChild={handleExitParentMode} />;
+    } else {
+      // Se não tem PIN, força a tela de configuração de PIN
+      return <PinSetup />;
     }
-    
-    // Se não, mostra a visão da criança
-    return <ChildView />;
   }
-
-  // Se não está logado, mostra a visão da criança
+  
+  // Se o fluxo parental não está ativo, mostra a visão da criança
   return <ChildView />;
 }
