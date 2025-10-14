@@ -1,4 +1,4 @@
-// Re-deploy trigger v11 - Forcing redeploy to load environment variables.
+// Versão 2.0 - Lógica unificada e análise de URL robusta
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
@@ -8,6 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper para converter a duração do vídeo do formato do YouTube para segundos
 function parseDuration(isoDuration?: string): number {
   if (!isoDuration) return 0;
   const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
@@ -31,10 +32,43 @@ serve(async (req) => {
   }
 
   try {
-    const { channelId, pageToken } = await req.json();
-    if (!channelId) throw new Error("Channel ID is required.");
+    const { channelId, channelUrl, pageToken } = await req.json();
+    let finalChannelId = channelId;
 
-    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings,statistics&id=${channelId}&key=${YOUTUBE_API_KEY}`);
+    if (!finalChannelId && !channelUrl) {
+      throw new Error("Either channelId or channelUrl must be provided.");
+    }
+
+    // --- Parte 1: Resolver a URL para um ID de Canal, se necessário ---
+    if (channelUrl && !finalChannelId) {
+      const url = new URL(channelUrl);
+      const pathParts = url.pathname.split('/').filter(p => p);
+
+      if (pathParts[0] === 'channel' && pathParts[1]) {
+        finalChannelId = pathParts[1];
+      } else if (pathParts[0] && pathParts[0].startsWith('@')) {
+        const handle = pathParts[0].substring(1);
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle=${handle}&key=${YOUTUBE_API_KEY}`);
+        const data = await res.json();
+        if (!res.ok || !data.items?.length) throw new Error(`Could not find channel for handle: @${handle}`);
+        finalChannelId = data.items[0].id;
+      } else if ((pathParts[0] === 'user' || pathParts[0] === 'c') && pathParts[1]) {
+        const username = pathParts[1];
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${username}&key=${YOUTUBE_API_KEY}`);
+        const data = await res.json();
+        if (!res.ok || !data.items?.length) throw new Error(`Could not find channel for name: ${username}`);
+        finalChannelId = data.items[0].id;
+      } else {
+        throw new Error("Invalid or unsupported YouTube channel URL format.");
+      }
+    }
+
+    if (!finalChannelId) {
+      throw new Error("Could not determine Channel ID.");
+    }
+
+    // --- Parte 2: Buscar Detalhes do Canal e Vídeos ---
+    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,brandingSettings,statistics&id=${finalChannelId}&key=${YOUTUBE_API_KEY}`);
     const channelData = await channelRes.json();
     if (!channelRes.ok || !channelData.items?.length) throw new Error("Channel details not found.");
     
@@ -81,7 +115,6 @@ serve(async (req) => {
         url: `https://www.youtube.com/watch?v=${item.id}`,
       };
       
-      // More robust classification: check for #shorts tag OR duration <= 60s
       const isShort = title.toLowerCase().includes('#shorts') || (durationInSeconds > 0 && durationInSeconds <= 60);
 
       if (isShort) {
@@ -92,7 +125,7 @@ serve(async (req) => {
     });
 
     const responsePayload = {
-      channelId,
+      channelId: finalChannelId,
       channelName: channelDetails.snippet.title,
       channelThumbnail: channelDetails.snippet.thumbnails.default.url,
       channelBannerUrl: channelDetails.brandingSettings?.image?.bannerExternalUrl,
