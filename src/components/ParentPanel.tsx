@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ArrowLeft, Shield } from "lucide-react";
+import { Plus, Trash2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 
-interface Props {
-  onSwitchToChild: () => void;
-}
-
-export default function ParentPanel({ onSwitchToChild }: Props) {
+export default function ParentPanel() {
   const [allowedContent, setAllowedContent] = useState<AllowedContent[]>([]);
   const [newUrl, setNewUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const saved = localStorage.getItem("barraKidsAllowedContent");
@@ -54,7 +52,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
         toast.dismiss();
 
-        if (error) throw error; // Lança o erro para o bloco catch
+        if (error) throw error;
         if (!data || !data.channelId) throw new Error("Resposta inválida do servidor.");
         
         contentToAdd = { 
@@ -78,7 +76,6 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               errorMessage = errorJson.error;
             }
           } catch {
-            // Se não conseguir parsear o JSON, usa a mensagem padrão
             errorMessage = error.message;
           }
         } else if (error.message) {
@@ -98,9 +95,8 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       if (contentToAdd.type === 'video') {
         toast.success("URL de vídeo adicionada!");
       }
-      // Redireciona para a tela da criança após 1 segundo
       setTimeout(() => {
-        onSwitchToChild();
+        navigate(0); // Recarrega a página para refletir as mudanças
       }, 1000);
     }
     setIsLoading(false);
@@ -182,14 +178,6 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
             )}
           </div>
         </div>
-
-        <Button
-          onClick={onSwitchToChild}
-          className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Voltar para Modo Criança
-        </Button>
       </div>
     </div>
   );
