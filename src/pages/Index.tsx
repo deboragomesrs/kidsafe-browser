@@ -1,40 +1,30 @@
-import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/hooks/use-profile";
+import { useOutletContext } from "react-router-dom";
 import ChildView from "@/components/ChildView";
 import ParentPanel from "@/components/ParentPanel";
 import PinSetup from "@/components/PinSetup";
-import PinDialog from "@/components/PinDialog";
 import { Loader2 } from "lucide-react";
+import { User } from "@supabase/supabase-js";
+import { Tables } from "@/integrations/supabase/types";
+
+interface IndexContext {
+  user: User | null;
+  authLoading: boolean;
+  profile: Tables<'profiles'> | null;
+  profileLoading: boolean;
+  isParentPanelUnlocked: boolean;
+  handleExitParentMode: () => void;
+}
 
 export default function Index() {
-  const { user, loading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { 
+    user, 
+    authLoading, 
+    profile, 
+    profileLoading, 
+    isParentPanelUnlocked, 
+    handleExitParentMode 
+  } = useOutletContext<IndexContext>();
   
-  const [isParentPanelUnlocked, setIsParentPanelUnlocked] = useState(false);
-  const [showPinDialog, setShowPinDialog] = useState(false);
-
-  // Callback para o Header
-  const handleEnterParentMode = () => {
-    if (profile && profile.parental_pin) {
-      setShowPinDialog(true);
-    } else {
-      // Se não tem PIN, força o modo parental para a tela de setup
-      setIsParentPanelUnlocked(true);
-    }
-  };
-
-  // Callback do PinDialog
-  const handlePinSuccess = () => {
-    setShowPinDialog(false);
-    setIsParentPanelUnlocked(true);
-  };
-
-  // Callback do ParentPanel
-  const handleExitParentMode = () => {
-    setIsParentPanelUnlocked(false);
-  };
-
   if (authLoading || (user && profileLoading)) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -54,19 +44,9 @@ export default function Index() {
     }
     
     // Se não, mostra a visão da criança
-    return (
-      <>
-        <ChildView onEnterParentMode={handleEnterParentMode} />
-        <PinDialog
-          open={showPinDialog}
-          onClose={() => setShowPinDialog(false)}
-          correctPin={profile?.parental_pin || ""}
-          onSuccess={handlePinSuccess}
-        />
-      </>
-    );
+    return <ChildView />;
   }
 
-  // Se não está logado, mostra a visão da criança (com conteúdo padrão ou vazio)
+  // Se não está logado, mostra a visão da criança
   return <ChildView />;
 }

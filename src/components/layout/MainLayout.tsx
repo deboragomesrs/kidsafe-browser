@@ -1,41 +1,71 @@
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import MobileSidebar from "./MobileSidebar";
-import { Outlet, useOutletContext } from "react-router-dom";
-import { useState } from "react";
-
-type ContextType = { onEnterParentMode: () => void };
+import PinDialog from "@/components/PinDialog";
+import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/hooks/use-profile";
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // A lógica para entrar no modo parental agora é controlada pela página Index.
-  // Precisamos de uma forma de passar o gatilho do Header para a página.
-  // No entanto, a página Index não é um filho direto do Outlet aqui.
-  // A melhor abordagem é ter a lógica na própria página Index e passar o callback para o Header.
-  // Como Index não está aqui, vou deixar a lógica de estado no Index e o Header vai precisar de um jeito de chamar a função.
-  // A forma mais limpa é usar um contexto ou um gerenciador de estado, mas para simplificar, vou assumir que a página Index renderiza o Header com o prop correto.
-  // ... Reavaliando... A estrutura com Outlet é fixa. A página Index é renderizada DENTRO do Outlet.
-  // A melhor forma é o Index passar um callback para o Outlet.
   
-  const context = useOutletContext<ContextType>();
+  // Centralizing state management here
+  const { user, loading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useProfile();
+  
+  const [isParentPanelUnlocked, setIsParentPanelUnlocked] = useState(false);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+
+  const handleEnterParentMode = () => {
+    if (!user) return; // Should not happen if button is visible, but good practice
+    if (profile && profile.parental_pin) {
+      setShowPinDialog(true);
+    } else {
+      // If no PIN is set, go directly to setup
+      setIsParentPanelUnlocked(true);
+    }
+  };
+
+  const handlePinSuccess = () => {
+    setShowPinDialog(false);
+    setIsParentPanelUnlocked(true);
+  };
+
+  const handleExitParentMode = () => {
+    setIsParentPanelUnlocked(false);
+  };
+
+  const contextValue = {
+    user,
+    authLoading,
+    profile,
+    profileLoading,
+    isParentPanelUnlocked,
+    handleExitParentMode,
+  };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <Header 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
-        onEnterParentMode={context?.onEnterParentMode}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <MobileSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 overflow-y-auto">
-          <Outlet context={{ onEnterParentMode: context?.onEnterParentMode }} />
-        </main>
+    <>
+      <div className="flex flex-col h-screen bg-background">
+        <Header 
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+          onEnterParentMode={handleEnterParentMode}
+        />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <MobileSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <main className="flex-1 overflow-y-auto">
+            <Outlet context={contextValue} />
+          </main>
+        </div>
       </div>
-    </div>
+      <PinDialog
+        open={showPinDialog}
+        onClose={() => setShowPinDialog(false)}
+        correctPin={profile?.parental_pin || ""}
+        onSuccess={handlePinSuccess}
+      />
+    </>
   );
-}
-
-export function useParentMode() {
-  return useOutletContext<ContextType>();
 }
