@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 interface Props {
   onSwitchToChild: () => void;
@@ -53,7 +54,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
         toast.dismiss();
 
-        if (error) throw new Error(error.message || "Falha ao buscar detalhes do canal.");
+        if (error) throw error; // Lança o erro para o bloco catch
         if (!data || !data.channelId) throw new Error("Resposta inválida do servidor.");
         
         contentToAdd = { 
@@ -67,7 +68,24 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
       } catch (error: any) {
         toast.dismiss();
-        toast.error(`Erro: ${error.message}`);
+        
+        let errorMessage = "Ocorreu um erro ao contatar o servidor.";
+      
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const errorJson = await error.context.json();
+            if (errorJson.error) {
+              errorMessage = errorJson.error;
+            }
+          } catch {
+            // Se não conseguir parsear o JSON, usa a mensagem padrão
+            errorMessage = error.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        toast.error(`Erro: ${errorMessage}`);
         setIsLoading(false);
         return;
       }
