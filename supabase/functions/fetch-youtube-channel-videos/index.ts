@@ -1,4 +1,4 @@
-// Re-deploy trigger v10 - Attempting deployment after environment rebuild.
+// Re-deploy trigger v11 - Forcing redeploy to load environment variables.
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const YOUTUBE_API_KEY = Deno.env.get("YOUTUBE_API_KEY");
