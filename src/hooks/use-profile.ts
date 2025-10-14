@@ -16,12 +16,11 @@ const fetchProfile = async (userId: string) => {
   return data;
 };
 
-// Update user profile (e.g., set PIN)
+// Update or create user profile (e.g., set PIN)
 const updateProfile = async ({ userId, updates }: { userId: string, updates: { parental_pin: string } }) => {
   const { data, error } = await supabase
     .from('profiles')
-    .update(updates)
-    .eq('id', userId)
+    .upsert({ id: userId, ...updates }) // Changed to upsert
     .select()
     .single();
 
