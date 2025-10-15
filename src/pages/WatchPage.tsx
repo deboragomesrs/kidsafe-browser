@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { YouTubeVideo, ChannelPageData } from "@/types";
 import { Loader2 } from "lucide-react";
@@ -7,6 +7,7 @@ import EmbeddedVideoPlayer from "@/components/EmbeddedVideoPlayer";
 import VideoList from "@/components/VideoList";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useRef, useEffect } from 'react';
 
 interface VideoDetails extends YouTubeVideo {
   description: string;
@@ -23,9 +24,9 @@ const fetchVideoDetails = async (videoId: string): Promise<VideoDetails> => {
   return data;
 };
 
-const fetchChannelVideos = async (channelId: string): Promise<ChannelPageData> => {
+const fetchChannelVideos = async (channelId: string, pageToken?: string | null): Promise<ChannelPageData> => {
   const { data, error } = await supabase.functions.invoke("fetch-youtube-channel-videos", {
-    body: { channelId },
+    body: { channelId, pageToken },
   });
   if (error) throw new Error(error.message);
   return data;
@@ -33,6 +34,7 @@ const fetchChannelVideos = async (channelId: string): Promise<ChannelPageData> =
 
 export default function WatchPage() {
   const { videoId } = useParams<{ videoId: string }>();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const { data: video, isLoading: isLoadingVideo, error: videoError } = useQuery({
     queryKey: ["videoDetails", videoId],
@@ -40,13 +42,44 @@ export default function WatchPage() {
     enabled: !!videoId,
   });
 
-  const { data: channelData, isLoading: isLoadingChannel, error: channelError } = useQuery({
+  const { 
+    data: channelData, 
+    isLoading: isLoadingChannel, 
+    error: channelError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["channelVideos", video?.channelId],
-    queryFn: () => fetchChannelVideos(video!.channelId),
+    queryFn: ({ pageParam }) => fetchChannelVideos(video!.channelId, pageParam as string | undefined),
+    getNextPageParam: (lastPage) => lastPage.nextPageToken,
+    initialPageParam: undefined,
     enabled: !!video?.channelId,
   });
 
-  if (isLoadingVideo || (video && isLoadingChannel)) {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (isLoadingVideo || (video && isLoadingChannel && !channelData)) {
     return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
@@ -59,10 +92,10 @@ export default function WatchPage() {
     return <div className="p-8 text-center">Vídeo não encontrado.</div>;
   }
 
-  const allVideos = [...(channelData?.videos || []), ...(channelData?.shorts || [])];
+  const allVideos = channelData?.pages.flatMap(page => [...(page?.videos || []), ...(page?.shorts || [])]) || [];
 
   return (
-    <div className="container mx-auto max-w-7xl p-4 lg:p-6">
+    <div className="container mx-auto max-w-7xl py-4 pl-4 lg:py-6 lg:pl-6">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Coluna Principal (Vídeo e Detalhes) */}
         <div className="lg:col-span-2">
@@ -83,8 +116,13 @@ export default function WatchPage() {
         {/* Coluna Lateral (Próximos Vídeos) */}
         <div className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-bold">Próximos vídeos</h2>
-          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto pr-2">
+          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto no-scrollbar">
             <VideoList videos={allVideos} currentVideoId={videoId} />
+            <div ref={loadMoreRef} className="flex justify-center py-4">
+              {isFetchingNextPage && (
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              )}
+            </div>
           </div>
         </div>
       </div>

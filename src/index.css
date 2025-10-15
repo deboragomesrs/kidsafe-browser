@@ -128,4 +128,13 @@ All colors MUST be HSL.
   .animate-bounce-slow {
     animation: bounce-slow 2s ease-in-out infinite;
   }
+
+  /* Custom scrollbar hider */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
