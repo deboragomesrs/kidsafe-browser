@@ -8,6 +8,7 @@ import VideoList from "@/components/VideoList";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useRef, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface VideoDetails extends YouTubeVideo {
   description: string;
@@ -92,7 +93,11 @@ export default function WatchPage() {
     return <div className="p-8 text-center">Vídeo não encontrado.</div>;
   }
 
-  const allVideos = channelData?.pages.flatMap(page => [...(page?.videos || []), ...(page?.shorts || [])]) || [];
+  const allRegularVideos = channelData?.pages.flatMap(page => page?.videos || []) || [];
+  const allShorts = channelData?.pages.flatMap(page => page?.shorts || []) || [];
+
+  const nextVideos = allRegularVideos.filter(v => v.id !== videoId);
+  const nextShorts = allShorts.filter(v => v.id !== videoId);
 
   return (
     <div className="container mx-auto max-w-7xl py-4 pl-4 lg:py-6 lg:pl-6">
@@ -115,15 +120,25 @@ export default function WatchPage() {
 
         {/* Coluna Lateral (Próximos Vídeos) */}
         <div className="lg:col-span-1">
-          <h2 className="mb-4 text-lg font-bold">Próximos vídeos</h2>
-          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto no-scrollbar">
-            <VideoList videos={allVideos} currentVideoId={videoId} />
-            <div ref={loadMoreRef} className="flex justify-center py-4">
-              {isFetchingNextPage && (
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              )}
+          <Tabs defaultValue="videos" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="videos">Vídeos</TabsTrigger>
+              <TabsTrigger value="shorts" disabled={nextShorts.length === 0}>Shorts</TabsTrigger>
+            </TabsList>
+            <div className="mt-4 max-h-[calc(100vh-12rem)] overflow-y-auto no-scrollbar">
+              <TabsContent value="videos">
+                <VideoList videos={nextVideos} />
+              </TabsContent>
+              <TabsContent value="shorts">
+                <VideoList videos={nextShorts} />
+              </TabsContent>
+              <div ref={loadMoreRef} className="flex justify-center py-4">
+                {isFetchingNextPage && (
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                )}
+              </div>
             </div>
-          </div>
+          </Tabs>
         </div>
       </div>
     </div>
