@@ -1,4 +1,4 @@
-import { Search, Bell, Cast, LogIn, LogOut, Menu, Lock } from "lucide-react";
+import { Search, LogIn, LogOut, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
 import { NavLink } from "react-router-dom";
@@ -7,19 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
-  onMenuClick?: () => void;
   onEnterParentMode?: () => void;
 }
 
-export default function Header({ onMenuClick, onEnterParentMode }: HeaderProps) {
+export default function Header({ onEnterParentMode }: HeaderProps) {
   const { user, login, logout } = useAuth();
 
   return (
     <header className="bg-background text-white p-2 md:p-4 shadow-lg flex items-center justify-between gap-4">
       <div className="flex items-center gap-2">
-        <Button onClick={onMenuClick} variant="ghost" size="icon">
-          <Menu className="w-5 h-5" />
-        </Button>
         <NavLink to="/" className="flex items-center gap-3">
           <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-xl font-bold hidden sm:block">Barra Kids</h1>
