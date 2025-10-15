@@ -1,13 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { YouTubeVideo, ChannelPageData } from "@/types";
+import { YouTubeVideo, ChannelPageData, AllowedContent } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Loader2 } from "lucide-react";
 import VideoGrid from "@/components/VideoGrid";
 import ShortsGrid from "@/components/ShortsGrid";
 import ChannelHeader from "@/components/ChannelHeader";
 import { useRef, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const fetchChannelDetails = async (channelId: string, pageToken?: string | null): Promise<ChannelPageData> => {
   const { data, error } = await supabase.functions.invoke("fetch-youtube-channel-videos", {
@@ -19,10 +20,28 @@ const fetchChannelDetails = async (channelId: string, pageToken?: string | null)
   return data;
 };
 
+const fetchContentSettings = async (userId: string, channelId: string): Promise<AllowedContent | null> => {
+  const { data, error } = await supabase
+    .from('allowed_content')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('content_id', channelId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+};
+
 export default function ChannelPage() {
   const { channelId } = useParams<{ channelId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const { data: contentSettings } = useQuery({
+    queryKey: ['contentSettings', user?.id, channelId],
+    queryFn: () => fetchContentSettings(user!.id, channelId!),
+    enabled: !!user && !!channelId,
+  });
 
   const {
     data,
@@ -101,6 +120,8 @@ export default function ChannelPage() {
   const allShorts = data.pages.flatMap((page) => page?.shorts || []);
   const uniqueShorts = Array.from(new Map(allShorts.map(short => [short.id, short])).values());
 
+  const shortsAreEnabled = contentSettings?.shorts_enabled ?? true;
+
   return (
     <div className="w-full h-full flex flex-col">
       <ChannelHeader 
@@ -114,14 +135,16 @@ export default function ChannelPage() {
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-12">
             <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
-            <TabsTrigger value="shorts" className="text-base font-bold" disabled={uniqueShorts.length === 0}>Shorts</TabsTrigger>
+            <TabsTrigger value="shorts" className="text-base font-bold" disabled={!shortsAreEnabled || uniqueShorts.length === 0}>Shorts</TabsTrigger>
           </TabsList>
           <TabsContent value="videos" className="mt-6">
             <VideoGrid videos={uniqueVideos} onVideoSelect={handleVideoSelect} />
           </TabsContent>
-          <TabsContent value="shorts" className="mt-6">
-            <ShortsGrid videos={uniqueShorts} onVideoSelect={handleVideoSelect} />
-          </TabsContent>
+          {shortsAreEnabled && (
+            <TabsContent value="shorts" className="mt-6">
+              <ShortsGrid videos={uniqueShorts} onVideoSelect={handleVideoSelect} />
+            </TabsContent>
+          )}
         </Tabs>
 
         <div ref={loadMoreRef} className="flex justify-center py-8">

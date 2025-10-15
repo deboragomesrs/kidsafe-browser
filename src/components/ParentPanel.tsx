@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Plus, Trash2, Shield, ArrowLeft, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +40,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<YouTubeChannelSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [shortsEnabledForNew, setShortsEnabledForNew] = useState<Record<string, boolean>>({});
 
   const { data: allowedContent = [], isLoading: isLoadingContent } = useQuery({
     queryKey: ['allowedContent', user?.id],
@@ -57,9 +61,25 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['allowedContent', user?.id] });
       toast.success(`Canal "${data?.[0]?.name}" adicionado!`);
+      setSearchResults([]);
+      setSearchQuery("");
     },
     onError: (error) => {
       toast.error(`Erro ao adicionar canal: ${error.message}`);
+    }
+  });
+
+  const updateContentMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number, updates: Partial<AllowedContent> }) => {
+      const { error } = await supabase.from('allowed_content').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['allowedContent', user?.id] });
+      toast.success(`Configuração de Shorts atualizada.`);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar: ${error.message}`);
     }
   });
 
@@ -87,6 +107,11 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       });
       if (error) throw error;
       setSearchResults(data);
+      // Default shorts to enabled for new search results
+      setShortsEnabledForNew(data.reduce((acc: Record<string, boolean>, channel: YouTubeChannelSearchResult) => {
+        acc[channel.channelId] = true;
+        return acc;
+      }, {}));
       if (data.length === 0) {
         toast.info("Nenhum canal encontrado com esse nome.");
       }
@@ -104,7 +129,8 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       content_id: channel.channelId,
       name: channel.title,
       thumbnail_url: channel.thumbnail,
-      url: `https://www.youtube.com/channel/${channel.channelId}`
+      url: `https://www.youtube.com/channel/${channel.channelId}`,
+      shorts_enabled: shortsEnabledForNew[channel.channelId] ?? true,
     });
   };
 
@@ -139,17 +165,24 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
             <div className="space-y-3 mt-6">
               <h3 className="text-lg font-semibold">Resultados da Busca:</h3>
               {searchResults.map((channel) => (
-                <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
+                <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl gap-2">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{channel.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{channel.description}</p>
-                    </div>
+                    <p className="font-semibold truncate">{channel.title}</p>
                   </div>
-                  <Button onClick={() => handleAddChannel(channel)} size="sm" className="bg-primary/20 text-primary hover:bg-primary/30 shrink-0">
-                    <Plus className="w-4 h-4 mr-1" /> Adicionar
-                  </Button>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`shorts-${channel.channelId}`} 
+                        checked={shortsEnabledForNew[channel.channelId]}
+                        onCheckedChange={(checked) => setShortsEnabledForNew(prev => ({...prev, [channel.channelId]: !!checked}))}
+                      />
+                      <Label htmlFor={`shorts-${channel.channelId}`} className="text-xs">Liberar Shorts</Label>
+                    </div>
+                    <Button onClick={() => handleAddChannel(channel)} size="sm" className="bg-primary/20 text-primary hover:bg-primary/30">
+                      <Plus className="w-4 h-4 mr-1" /> Adicionar
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -161,14 +194,26 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               <p className="text-muted-foreground text-center py-8">Nenhum conteúdo adicionado ainda.</p>
             ) : (
               allowedContent.map((content) => (
-                <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm">
+                <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {content.thumbnail_url && <img src={content.thumbnail_url} alt={content.name || ""} className="w-8 h-8 rounded-full" />}
                     <span className="text-sm truncate text-secondary-foreground">{content.name}</span>
                   </div>
-                  <Button onClick={() => removeContentMutation.mutate(content.id)} variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {content.type === 'channel' && (
+                       <div className="flex items-center space-x-2">
+                         <Switch
+                           id={`switch-shorts-${content.id}`}
+                           checked={content.shorts_enabled}
+                           onCheckedChange={(checked) => updateContentMutation.mutate({ id: content.id, updates: { shorts_enabled: checked }})}
+                         />
+                         <Label htmlFor={`switch-shorts-${content.id}`} className="text-xs">Shorts</Label>
+                       </div>
+                    )}
+                    <Button onClick={() => removeContentMutation.mutate(content.id)} variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}

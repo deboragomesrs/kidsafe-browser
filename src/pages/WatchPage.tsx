@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { YouTubeVideo, ChannelPageData } from "@/types";
+import { YouTubeVideo, ChannelPageData, AllowedContent } from "@/types";
 import { Loader2 } from "lucide-react";
 import EmbeddedVideoPlayer from "@/components/EmbeddedVideoPlayer";
 import VideoList from "@/components/VideoList";
@@ -9,9 +9,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useRef, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/context/AuthContext";
 
 interface VideoDetails extends YouTubeVideo {
   description: string;
+  channelId: string;
   channelTitle: string;
   publishedAt: string;
   viewCount: string;
@@ -33,14 +35,32 @@ const fetchChannelVideos = async (channelId: string, pageToken?: string | null):
   return data;
 };
 
+const fetchContentSettings = async (userId: string, channelId: string): Promise<AllowedContent | null> => {
+  const { data, error } = await supabase
+    .from('allowed_content')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('content_id', channelId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+};
+
 export default function WatchPage() {
   const { videoId } = useParams<{ videoId: string }>();
+  const { user } = useAuth();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const { data: video, isLoading: isLoadingVideo, error: videoError } = useQuery({
     queryKey: ["videoDetails", videoId],
     queryFn: () => fetchVideoDetails(videoId!),
     enabled: !!videoId,
+  });
+
+  const { data: contentSettings } = useQuery({
+    queryKey: ['contentSettings', user?.id, video?.channelId],
+    queryFn: () => fetchContentSettings(user!.id, video!.channelId),
+    enabled: !!user && !!video?.channelId,
   });
 
   const { 
@@ -98,6 +118,8 @@ export default function WatchPage() {
 
   const nextVideos = allRegularVideos.filter(v => v.id !== videoId);
   const nextShorts = allShorts.filter(v => v.id !== videoId);
+  
+  const shortsAreEnabled = contentSettings?.shorts_enabled ?? true;
 
   return (
     <div className="container mx-auto max-w-7xl py-4 pl-4 lg:py-6 lg:pl-6">
@@ -123,15 +145,17 @@ export default function WatchPage() {
           <Tabs defaultValue="videos" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="videos">Vídeos</TabsTrigger>
-              <TabsTrigger value="shorts" disabled={nextShorts.length === 0}>Shorts</TabsTrigger>
+              <TabsTrigger value="shorts" disabled={!shortsAreEnabled || nextShorts.length === 0}>Shorts</TabsTrigger>
             </TabsList>
             <div className="mt-4 max-h-[calc(100vh-12rem)] overflow-y-auto no-scrollbar">
               <TabsContent value="videos">
                 <VideoList videos={nextVideos} />
               </TabsContent>
-              <TabsContent value="shorts">
-                <VideoList videos={nextShorts} />
-              </TabsContent>
+              {shortsAreEnabled && (
+                <TabsContent value="shorts">
+                  <VideoList videos={nextShorts} />
+                </TabsContent>
+              )}
               <div ref={loadMoreRef} className="flex justify-center py-4">
                 {isFetchingNextPage && (
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />

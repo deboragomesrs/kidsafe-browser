@@ -41,6 +41,7 @@ export type Database = {
           url: string | null
           thumbnail_url: string | null
           created_at: string | null
+          shorts_enabled: boolean
         }
         Insert: {
           id?: number
@@ -51,6 +52,7 @@ export type Database = {
           url?: string | null
           thumbnail_url?: string | null
           created_at?: string | null
+          shorts_enabled?: boolean
         }
         Update: {
           id?: number
@@ -61,6 +63,7 @@ export type Database = {
           url?: string | null
           thumbnail_url?: string | null
           created_at?: string | null
+          shorts_enabled?: boolean
         }
       }
     }

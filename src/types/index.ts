@@ -6,6 +6,7 @@ export type AllowedContent = {
   name: string | null;
   url: string | null;
   thumbnail_url: string | null;
+  shorts_enabled: boolean;
 };
 
 export type YouTubeVideo = {
