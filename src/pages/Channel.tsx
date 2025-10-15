@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { YouTubeVideo, ChannelPageData } from "@/types";
@@ -6,9 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Loader2 } from "lucide-react";
 import VideoGrid from "@/components/VideoGrid";
 import ShortsGrid from "@/components/ShortsGrid";
-import VideoPlayer from "@/components/VideoPlayer";
 import ChannelHeader from "@/components/ChannelHeader";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 const fetchChannelDetails = async (channelId: string, pageToken?: string | null): Promise<ChannelPageData> => {
   const { data, error } = await supabase.functions.invoke("fetch-youtube-channel-videos", {
@@ -22,7 +21,7 @@ const fetchChannelDetails = async (channelId: string, pageToken?: string | null)
 
 export default function ChannelPage() {
   const { channelId } = useParams<{ channelId: string }>();
-  const [playingVideo, setPlayingVideo] = useState<YouTubeVideo | null>(null);
+  const navigate = useNavigate();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -47,7 +46,7 @@ export default function ChannelPage() {
           fetchNextPage();
         }
       },
-      { threshold: 0.1 } // <-- Aumentando a sensibilidade do "sensor"
+      { threshold: 0.1 }
     );
 
     const currentRef = loadMoreRef.current;
@@ -61,6 +60,10 @@ export default function ChannelPage() {
       }
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const handleVideoSelect = (video: YouTubeVideo) => {
+    navigate(`/watch/${video.id}`);
+  };
 
   if (isLoading || !channelId) {
     return (
@@ -99,39 +102,36 @@ export default function ChannelPage() {
   const uniqueShorts = Array.from(new Map(allShorts.map(short => [short.id, short])).values());
 
   return (
-    <>
-      <div className="w-full h-full flex flex-col">
-        <ChannelHeader 
-          channelName={channelInfo.channelName}
-          channelThumbnail={channelInfo.channelThumbnail}
-          channelBannerUrl={channelInfo.channelBannerUrl}
-          videoCount={channelInfo.videoCount || 0}
-        />
-        
-        <div className="p-4 md:p-6">
-          <Tabs defaultValue="videos" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-12">
-              <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
-              <TabsTrigger value="shorts" className="text-base font-bold" disabled={uniqueShorts.length === 0}>Shorts</TabsTrigger>
-            </TabsList>
-            <TabsContent value="videos" className="mt-6">
-              <VideoGrid videos={uniqueVideos} onVideoSelect={setPlayingVideo} />
-            </TabsContent>
-            <TabsContent value="shorts" className="mt-6">
-              <ShortsGrid videos={uniqueShorts} onVideoSelect={setPlayingVideo} />
-            </TabsContent>
-          </Tabs>
+    <div className="w-full h-full flex flex-col">
+      <ChannelHeader 
+        channelName={channelInfo.channelName}
+        channelThumbnail={channelInfo.channelThumbnail}
+        channelBannerUrl={channelInfo.channelBannerUrl}
+        videoCount={channelInfo.videoCount || 0}
+      />
+      
+      <div className="p-4 md:p-6">
+        <Tabs defaultValue="videos" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-12">
+            <TabsTrigger value="videos" className="text-base font-bold">Vídeos</TabsTrigger>
+            <TabsTrigger value="shorts" className="text-base font-bold" disabled={uniqueShorts.length === 0}>Shorts</TabsTrigger>
+          </TabsList>
+          <TabsContent value="videos" className="mt-6">
+            <VideoGrid videos={uniqueVideos} onVideoSelect={handleVideoSelect} />
+          </TabsContent>
+          <TabsContent value="shorts" className="mt-6">
+            <ShortsGrid videos={uniqueShorts} onVideoSelect={handleVideoSelect} />
+          </TabsContent>
+        </Tabs>
 
-          <div ref={loadMoreRef} className="flex justify-center py-8">
-            {isFetchingNextPage ? (
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            ) : !hasNextPage && (uniqueVideos.length > 0 || uniqueShorts.length > 0) ? (
-              <p className="text-muted-foreground">Fim dos resultados</p>
-            ) : null}
-          </div>
+        <div ref={loadMoreRef} className="flex justify-center py-8">
+          {isFetchingNextPage ? (
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          ) : !hasNextPage && (uniqueVideos.length > 0 || uniqueShorts.length > 0) ? (
+            <p className="text-muted-foreground">Fim dos resultados</p>
+          ) : null}
         </div>
       </div>
-      <VideoPlayer video={playingVideo} onClose={() => setPlayingVideo(null)} />
-    </>
+    </div>
   );
 }
