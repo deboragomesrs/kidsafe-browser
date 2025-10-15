@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { YouTubeVideo, ChannelPageData } from "@/types";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import EmbeddedVideoPlayer from "@/components/EmbeddedVideoPlayer";
 import VideoList from "@/components/VideoList";
 import { formatDistanceToNow } from 'date-fns';
@@ -69,7 +69,7 @@ export default function WatchPage() {
           <EmbeddedVideoPlayer videoId={video.id} />
           <div className="mt-4">
             <h1 className="text-xl font-bold md:text-2xl">{video.title}</h1>
-            <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span>{video.channelTitle}</span>
               <span>{Number(video.viewCount).toLocaleString('pt-BR')} visualizações</span>
               <span>{formatDistanceToNow(new Date(video.publishedAt), { addSuffix: true, locale: ptBR })}</span>
@@ -83,7 +83,9 @@ export default function WatchPage() {
         {/* Coluna Lateral (Próximos Vídeos) */}
         <div className="lg:col-span-1">
           <h2 className="mb-4 text-lg font-bold">Próximos vídeos</h2>
-          <VideoList videos={allVideos} currentVideoId={videoId} />
+          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto pr-2">
+            <VideoList videos={allVideos} currentVideoId={videoId} />
+          </div>
         </div>
       </div>
     </div>
