@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2, Shield, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Shield, ArrowLeft, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -9,7 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
-// Fetch allowed content for the user
+interface YouTubeChannelSearchResult {
+  channelId: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+}
+
 const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> => {
   const { data, error } = await supabase
     .from('allowed_content')
@@ -28,7 +34,9 @@ interface Props {
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [newUrl, setNewUrl] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<YouTubeChannelSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: allowedContent = [], isLoading: isLoadingContent } = useQuery({
     queryKey: ['allowedContent', user?.id],
@@ -46,10 +54,13 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['allowedContent', user?.id] });
-      setNewUrl("");
+      toast.success(`Canal "${data?.[0]?.name}" adicionado!`);
     },
+    onError: (error) => {
+      toast.error(`Erro ao adicionar canal: ${error.message}`);
+    }
   });
 
   const removeContentMutation = useMutation({
@@ -66,45 +77,35 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
     }
   });
 
-  const handleAddContent = async () => {
-    if (!newUrl.trim() || addContentMutation.isPending) return;
-
-    const url = newUrl.trim();
-    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-
-    if (videoIdMatch) {
-      // Lógica para vídeo (simplificada por enquanto)
-      addContentMutation.mutate({
-        type: 'video',
-        url: url,
-        content_id: videoIdMatch[1],
-        name: `Vídeo: ${videoIdMatch[1]}`,
-        thumbnail_url: `https://img.youtube.com/vi/${videoIdMatch[1]}/0.jpg`
-      }, { onSuccess: () => toast.success("Vídeo adicionado!") });
-    } else {
-      // Lógica para canal
-      try {
-        toast.loading("Verificando canal...");
-        const { data, error } = await supabase.functions.invoke('fetch-youtube-channel-videos', { body: { channelUrl: url } });
-        toast.dismiss();
-
-        if (error) throw error;
-        if (!data || !data.channelId) throw new Error("Resposta inválida do servidor.");
-
-        addContentMutation.mutate({
-          type: 'channel',
-          content_id: data.channelId,
-          name: data.channelName,
-          url: url,
-          thumbnail_url: data.channelThumbnail
-        }, { onSuccess: () => toast.success(`Canal "${data.channelName}" adicionado!`) });
-
-      } catch (error: any) {
-        toast.dismiss();
-        let errorMessage = error instanceof FunctionsHttpError ? (await error.context.json()).error : error.message;
-        toast.error(`Erro: ${errorMessage}`);
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-youtube-channels', {
+        body: { query: searchQuery }
+      });
+      if (error) throw error;
+      setSearchResults(data);
+      if (data.length === 0) {
+        toast.info("Nenhum canal encontrado com esse nome.");
       }
+    } catch (error: any) {
+      const errorMessage = error instanceof FunctionsHttpError ? (await error.context.json()).error : error.message;
+      toast.error(`Erro na busca: ${errorMessage}`);
+    } finally {
+      setIsSearching(false);
     }
+  };
+
+  const handleAddChannel = (channel: YouTubeChannelSearchResult) => {
+    addContentMutation.mutate({
+      type: 'channel',
+      content_id: channel.channelId,
+      name: channel.title,
+      thumbnail_url: channel.thumbnail,
+      url: `https://www.youtube.com/channel/${channel.channelId}`
+    });
   };
 
   return (
@@ -115,23 +116,46 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
             <Shield className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary">Painel dos Pais</h1>
           </div>
-          <p className="text-muted-foreground mb-6">Adicione URLs de canais ou vídeos do YouTube que seus filhos podem assistir.</p>
+          <p className="text-muted-foreground mb-6">Busque pelo nome do canal do YouTube para adicioná-lo à lista de conteúdos permitidos.</p>
           <div className="flex gap-2 mb-6">
             <Input
               type="text"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="Ex: youtube.com/@canal"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Digite o nome do canal..."
               className="flex-1 rounded-xl bg-input text-foreground border-border"
-              onKeyPress={(e) => e.key === "Enter" && handleAddContent()}
-              disabled={addContentMutation.isPending}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              disabled={isSearching}
             />
-            <Button onClick={handleAddContent} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80" disabled={addContentMutation.isPending}>
-              <Plus className="w-5 h-5 mr-2" />
-              {addContentMutation.isPending ? "Adicionando..." : "Adicionar"}
+            <Button onClick={handleSearch} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80" disabled={isSearching}>
+              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5 mr-2" />}
+              Buscar
             </Button>
           </div>
-          <div className="space-y-3">
+
+          {isSearching && <div className="flex justify-center py-4"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}
+
+          {searchResults.length > 0 && (
+            <div className="space-y-3 mt-6">
+              <h3 className="text-lg font-semibold">Resultados da Busca:</h3>
+              {searchResults.map((channel) => (
+                <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{channel.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{channel.description}</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => handleAddChannel(channel)} size="sm" className="bg-primary/20 text-primary hover:bg-primary/30 shrink-0">
+                    <Plus className="w-4 h-4 mr-1" /> Adicionar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-3 mt-8">
             <h2 className="text-xl font-semibold mb-3 text-foreground">Conteúdo Permitido ({allowedContent.length})</h2>
             {isLoadingContent ? <p>Carregando...</p> : allowedContent.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">Nenhum conteúdo adicionado ainda.</p>
@@ -139,9 +163,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
               allowedContent.map((content) => (
                 <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {content.type === 'channel' && content.thumbnail_url && (
-                      <img src={content.thumbnail_url} alt={content.name || ""} className="w-8 h-8 rounded-full" />
-                    )}
+                    {content.thumbnail_url && <img src={content.thumbnail_url} alt={content.name || ""} className="w-8 h-8 rounded-full" />}
                     <span className="text-sm truncate text-secondary-foreground">{content.name}</span>
                   </div>
                   <Button onClick={() => removeContentMutation.mutate(content.id)} variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0">
