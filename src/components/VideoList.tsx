@@ -8,11 +8,11 @@ interface Props {
 
 export default function VideoList({ videos, currentVideoId }: Props) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {videos.map((video) => (
         video.id !== currentVideoId && (
-          <Link to={`/watch/${video.id}`} key={video.id} className="flex gap-3 group">
-            <div className="relative h-24 w-40 flex-shrink-0 overflow-hidden rounded-lg">
+          <Link to={`/watch/${video.id}`} key={video.id} className="flex flex-col sm:flex-row gap-3 group">
+            <div className="relative aspect-video sm:aspect-auto sm:h-24 sm:w-40 flex-shrink-0 overflow-hidden rounded-lg">
               <img 
                 src={video.thumbnail} 
                 alt={video.title} 
