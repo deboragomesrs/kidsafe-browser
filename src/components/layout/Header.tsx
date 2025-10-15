@@ -1,10 +1,12 @@
-import { Search, LogIn, LogOut, Lock } from "lucide-react";
+import { Search, LogIn, LogOut, Lock, Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onEnterParentMode?: () => void;
@@ -12,10 +14,51 @@ interface HeaderProps {
 
 export default function Header({ onEnterParentMode }: HeaderProps) {
   const { user, login, logout } = useAuth();
+  const navItems = [
+    {
+      name: "Início",
+      icon: Home,
+      path: "/",
+    },
+  ];
 
   return (
     <header className="bg-background text-white p-2 md:p-4 shadow-lg flex items-center justify-between gap-4">
       <div className="flex items-center gap-2">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="w-6 h-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 bg-sidebar p-4 border-r-0">
+            <div className="mb-8 flex items-center gap-3">
+              <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
+              <h1 className="text-xl font-bold">Barra Kids</h1>
+            </div>
+            <nav className="flex flex-col gap-2">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground"
+                    )
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </NavLink>
+              ))}
+            </nav>
+          </SheetContent>
+        </Sheet>
+
         <NavLink to="/" className="flex items-center gap-3">
           <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-xl font-bold hidden sm:block">Barra Kids</h1>

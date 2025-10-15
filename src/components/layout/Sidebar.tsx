@@ -13,7 +13,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="flex flex-col items-center w-16 md:w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border py-4 transition-all duration-300">
+    <aside className="hidden md:flex flex-col items-center w-16 py-4">
       <TooltipProvider>
         <nav className="flex flex-col gap-4 mt-4">
           {navItems.map((item) => (
@@ -23,19 +23,18 @@ export default function Sidebar() {
                   to={item.path}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center justify-center md:justify-start gap-3 h-12 w-12 md:h-auto md:w-full md:px-3 md:py-2 rounded-lg transition-colors",
-                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      "flex items-center justify-center h-12 w-12 rounded-lg transition-colors",
+                      "hover:bg-accent hover:text-accent-foreground",
                       isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground"
                     )
                   }
                 >
-                  <item.icon className="w-6 h-6 md:w-5 md:h-5" />
-                  <span className="font-medium hidden md:inline">{item.name}</span>
+                  <item.icon className="w-6 h-6" />
                 </NavLink>
               </TooltipTrigger>
-              <TooltipContent side="right" className="md:hidden">
+              <TooltipContent side="right">
                 <p>{item.name}</p>
               </TooltipContent>
             </Tooltip>
