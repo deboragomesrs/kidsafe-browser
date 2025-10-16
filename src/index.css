@@ -83,8 +83,21 @@ All colors MUST be HSL.
 
   /* Correção agressiva para tradutores de navegador */
   [translate="no"] * {
+    /* Força a herança de cor de texto e fundo */
     color: inherit !important;
     background-color: inherit !important;
+  }
+  
+  /* Adicionalmente, forçar a cor de texto para foreground em elementos que deveriam ser brancos */
+  [translate="no"] {
+    color: hsl(var(--foreground)) !important;
+  }
+  
+  [translate="no"] input, 
+  [translate="no"] textarea, 
+  [translate="no"] button, 
+  [translate="no"] select {
+    color: hsl(var(--foreground)) !important;
   }
 }
 
