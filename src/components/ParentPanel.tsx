@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useProfile } from "@/hooks/use-profile";
 import PinSetup from "@/components/PinSetup";
 import PinDialog from "@/components/PinDialog";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import ParentalSettingsContent from "@/components/ParentalSettingsContent";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   onSwitchToChild: () => void;
@@ -38,20 +38,6 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
     return <PinSetup />;
   }
 
-  // Caso 3: O usuário tem um PIN e já o digitou com sucesso. Mostra o painel.
-  // (Usando a tela de diagnóstico por enquanto para confirmar)
-  return (
-    <div className="w-full h-full p-8 flex flex-col items-center justify-center text-center">
-      <div className="card-kids max-w-md w-full">
-        <h1 className="text-2xl font-bold text-primary mb-4">Diagnóstico bem-sucedido!</h1>
-        <p className="text-muted-foreground mb-6">
-          A transição para o modo parental funcionou. O problema da tela preta foi resolvido.
-        </p>
-        <Button onClick={onSwitchToChild} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-8">
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Voltar para Modo Criança
-        </Button>
-      </div>
-    </div>
-  );
+  // Caso 3: O usuário tem um PIN e já o digitou com sucesso. Mostra o painel de configurações.
+  return <ParentalSettingsContent onSwitchToChild={onSwitchToChild} />;
 }
