@@ -41,18 +41,18 @@ export default function PinSetup() {
     <div className="w-full h-full flex items-center justify-center p-4">
       <div className="card-kids max-w-md w-full text-center" translate="no">
         <ShieldCheck className="w-16 h-16 text-primary mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Configure seu PIN Parental</h1>
+        <h1 className="text-2xl font-bold mb-2 text-foreground">Configure seu PIN Parental</h1> {/* Garantindo que o título seja foreground */}
         <p className="text-muted-foreground mb-8">
           Crie um PIN de 4 dígitos para proteger o acesso ao painel de controle.
         </p>
 
         <div className="space-y-6">
           <div>
-            <label className="font-semibold mb-2 block">Novo PIN</label>
+            <label className="font-semibold mb-2 block text-foreground">Novo PIN</label> {/* Garantindo que o label seja foreground */}
             <SimplePinInput length={4} value={pin} onChange={setPin} />
           </div>
           <div>
-            <label className="font-semibold mb-2 block">Confirme o PIN</label>
+            <label className="font-semibold mb-2 block text-foreground">Confirme o PIN</label> {/* Garantindo que o label seja foreground */}
             <SimplePinInput length={4} value={confirmPin} onChange={setConfirmPin} />
           </div>
         </div>
