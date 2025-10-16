@@ -47,7 +47,8 @@ All colors MUST be HSL.
     --youtube-light-gray: 240 5% 30%; /* For borders, hover states */
     
     --gradient-hero: linear-gradient(135deg, hsl(var(--youtube-red)), hsl(var(--youtube-red-dark)));
-    --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--card))); /* Solid dark card background */
+    /* Removendo a definição de gradiente para o card para evitar conflitos de fundo */
+    /* --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--card))); */
     
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3); /* Darker shadow for dark theme */
     --shadow-button: 0 4px 12px hsl(var(--youtube-red) / 0.25);
@@ -119,7 +120,7 @@ All colors MUST be HSL.
   .card-kids {
     @apply bg-card rounded-3xl p-6;
     box-shadow: var(--shadow-card);
-    background: var(--gradient-card);
+    /* Removendo a linha de background que usava o gradiente */
   }
   
   @keyframes fade-in {
