@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -17,13 +17,14 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const input = e.target.value;
     
-    // Aceita apenas o último dígito digitado
-    const digit = input.slice(-1);
+    // Aceita apenas o último dígito digitado e garante que seja um número
+    const digit = input.replace(/\D/g, '').slice(-1);
 
-    if (digit && /^\d$/.test(digit)) {
-      const newValue = sanitizedValue.split('');
-      newValue[index] = digit;
-      onChange(newValue.join(''));
+    const newValueArray = sanitizedValue.split('');
+    
+    if (digit) {
+      newValueArray[index] = digit;
+      onChange(newValueArray.join(''));
 
       // Move o foco para o próximo input
       if (index < length - 1) {
@@ -31,9 +32,8 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
       }
     } else if (input === '') {
       // Permite apagar
-      const newValue = sanitizedValue.split('');
-      newValue[index] = '';
-      onChange(newValue.join(''));
+      newValueArray[index] = '';
+      onChange(newValueArray.join(''));
     }
   };
 
@@ -53,7 +53,9 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
         <input
           key={index}
           ref={(el) => (inputRefs.current[index] = el)}
-          type="text"
+          type="tel" // Usando tel para teclado numérico em mobile
+          inputMode="numeric"
+          pattern="[0-9]*"
           maxLength={1}
           value={digit}
           onChange={(e) => handleChange(e, index)}
@@ -62,9 +64,11 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
             "w-12 h-12 text-center text-2xl font-bold",
             "rounded-xl border-2 border-border bg-input text-foreground",
             "focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none",
-            "transition-all duration-200"
+            "transition-all duration-200",
+            // Adicionando uma classe de cor de texto mais forte para garantir que seja branco
+            "text-white" 
           )}
-          style={{ caretColor: 'transparent' }} // Esconde o cursor para inputs de PIN
+          style={{ caretColor: 'transparent' }} // Esconde o cursor
         />
       ))}
     </div>
