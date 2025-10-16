@@ -1,4 +1,4 @@
-const CACHE_NAME = 'barra-kids-v1';
+const CACHE_NAME = 'barra-kids-v2'; // Versão do cache atualizada para forçar a atualização
 const urlsToCache = [
   '/',
   '/index.html',
