@@ -134,6 +134,14 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
     });
   };
 
+  if (!user) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full p-4">
       <div className="container mx-auto max-w-4xl">
