@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { TablesUpdate } from '@/integrations/supabase/types';
 
 // Fetch user profile
 const fetchProfile = async (userId: string) => {
@@ -17,10 +18,10 @@ const fetchProfile = async (userId: string) => {
 };
 
 // Update or create user profile (e.g., set PIN)
-const updateProfile = async ({ userId, updates }: { userId: string, updates: { parental_pin: string } }) => {
+const updateProfile = async ({ userId, updates }: { userId: string, updates: TablesUpdate<'profiles'> }) => {
   const { data, error } = await supabase
     .from('profiles')
-    .upsert({ id: userId, ...updates }) // Changed to upsert
+    .upsert({ id: userId, ...updates })
     .select()
     .single();
 
@@ -44,7 +45,9 @@ export const useProfile = () => {
     mutationFn: updateProfile,
     onSuccess: (data) => {
       // Invalidate and refetch the profile query to get fresh data
-      queryClient.invalidateQueries({ queryKey: ['profile', data?.id] });
+      if (data) {
+        queryClient.invalidateQueries({ queryKey: ['profile', data.id] });
+      }
     },
   });
 

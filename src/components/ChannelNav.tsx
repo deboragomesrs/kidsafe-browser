@@ -9,15 +9,12 @@ interface Props {
   onChannelSelect: (channel: AllowedContent) => void;
 }
 
-export default function ChannelNav({ channels, selectedChannelId, onChannelSelect }: Props) {
+export default function ChannelNav({ channels, selectedChannelId }: Props) {
   const navigate = useNavigate();
 
   const handleSelect = (channel: AllowedContent) => {
-    if (channel.type === 'channel') {
-      navigate(`/channel/${channel.id}`);
-    } else {
-      // Handle video selection if needed in the future
-      onChannelSelect(channel);
+    if (channel.type === 'channel' && channel.content_id) {
+      navigate(`/channel/${channel.content_id}`);
     }
   };
 
@@ -26,16 +23,17 @@ export default function ChannelNav({ channels, selectedChannelId, onChannelSelec
       <div className="flex gap-3 min-w-max">
         {channels.filter(c => c.type === 'channel').map((channel) => (
           <Button
-            key={channel.type === 'channel' ? channel.id : channel.url}
+            key={channel.id} // Use the unique numeric DB ID for the key
             onClick={() => handleSelect(channel)}
             variant="ghost"
             className={cn(
               "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
               "bg-secondary text-secondary-foreground hover:bg-primary/80 hover:text-primary-foreground",
-              selectedChannelId === (channel.type === 'channel' ? channel.id : null) && "bg-primary text-primary-foreground"
+              // Compare the selectedChannelId (string) with the channel's content_id (string)
+              selectedChannelId === channel.content_id && "bg-primary text-primary-foreground"
             )}
           >
-            {channel.type === 'channel' ? channel.name : 'Vídeo'}
+            {channel.name || 'Canal'}
           </Button>
         ))}
       </div>
