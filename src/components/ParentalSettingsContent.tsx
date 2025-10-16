@@ -34,6 +34,7 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<YouTubeChannelSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchAttempted, setSearchAttempted] = useState(false);
 
   const { data: allowedContent = [], isLoading } = useQuery({
     queryKey: ['allowedContent', user?.id],
@@ -47,13 +48,14 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
       return;
     }
     setIsSearching(true);
+    setSearchAttempted(true);
     setSearchResults([]);
     try {
       const { data, error } = await supabase.functions.invoke('search-youtube-channels', {
         body: { query: searchQuery }
       });
       if (error) throw new Error(error.message);
-      setSearchResults(data);
+      setSearchResults(data || []);
     } catch (error: any) {
       toast.error(`Erro na busca: ${error.message}`);
     } finally {
@@ -146,25 +148,29 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
 
           {isSearching && <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div>}
 
-          {searchResults.length > 0 && (
+          {!isSearching && searchAttempted && (
             <div className="space-y-3 mb-8">
               <h2 className="text-xl font-semibold">Resultados da Busca</h2>
-              {searchResults.map((channel) => (
-                <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
-                  <div className="flex items-center gap-3 flex-1">
-                    <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full" />
-                    <span className="text-sm font-medium break-all">{channel.title}</span>
+              {searchResults.length > 0 ? (
+                searchResults.map((channel) => (
+                  <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">{channel.title}</span>
+                    </div>
+                    <Button 
+                      onClick={() => addContentMutation.mutate(channel)} 
+                      disabled={addContentMutation.isPending || isChannelAdded(channel.channelId)}
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {isChannelAdded(channel.channelId) ? 'Adicionado' : 'Adicionar'}
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={() => addContentMutation.mutate(channel)} 
-                    disabled={addContentMutation.isPending || isChannelAdded(channel.channelId)}
-                    size="sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {isChannelAdded(channel.channelId) ? 'Adicionado' : 'Adicionar'}
-                  </Button>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-4">Nenhum canal encontrado.</p>
+              )}
             </div>
           )}
 
@@ -174,9 +180,9 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
              allowedContent.length === 0 ? <p className="text-muted-foreground text-center py-8">Nenhum canal adicionado ainda.</p> :
              allowedContent.map((content) => (
               <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3 flex-1">
-                  <img src={content.thumbnail_url || ''} alt={content.name || ''} className="w-10 h-10 rounded-full" />
-                  <span className="text-sm font-medium break-all">{content.name}</span>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <img src={content.thumbnail_url || ''} alt={content.name || ''} className="w-10 h-10 rounded-full flex-shrink-0" />
+                  <span className="text-sm font-medium truncate">{content.name}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center space-x-2">
