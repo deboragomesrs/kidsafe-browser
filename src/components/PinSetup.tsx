@@ -60,7 +60,6 @@ export default function PinSetup() {
         <Button
           onClick={handleSetPin}
           disabled={isUpdating || pin.length < 4 || confirmPin.length < 4}
-          // O botão deve ser vermelho (bg-primary)
           className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-8"
         >
           {isUpdating ? "Salvando..." : "Salvar PIN"}

@@ -38,13 +38,13 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-card text-foreground border-border" translate="no"> {/* Adicionando border-border para garantir a borda */}
+      <DialogContent className="sm:max-w-md bg-card text-foreground border-border" translate="no">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground"> {/* Garantindo título branco */}
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <Lock className="w-5 h-5" />
             Acesso ao Painel dos Pais
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground"> {/* Garantindo descrição cinza claro */}
+          <DialogDescription className="text-muted-foreground">
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
@@ -63,7 +63,6 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
           <Button
             type="button"
             onClick={handleSubmit}
-            // O botão deve ser vermelho (bg-primary)
             className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-2"
             disabled={pin.length < 4}
           >
