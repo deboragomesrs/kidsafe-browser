@@ -11,6 +11,10 @@ import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
+interface Props {
+  onSwitchToChild: () => void;
+}
+
 interface YouTubeChannelSearchResult {
   channelId: string;
   title: string;
