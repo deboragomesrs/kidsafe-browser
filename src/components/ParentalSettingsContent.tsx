@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, ArrowLeft, Shield, Loader2, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Shield, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -10,8 +10,11 @@ import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
-interface Props {
-  onSwitchToChild: () => void;
+interface YouTubeChannelSearchResult {
+  channelId: string;
+  title: string;
+  description: string;
+  thumbnail: string;
 }
 
 const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> => {
@@ -23,7 +26,9 @@ const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> =>
 export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [newUrl, setNewUrl] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<YouTubeChannelSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: allowedContent = [], isLoading } = useQuery({
     queryKey: ['allowedContent', user?.id],
@@ -31,30 +36,45 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
     enabled: !!user,
   });
 
-  const addContentMutation = useMutation({
-    mutationFn: async (url: string) => {
-      const { data: channelData, error: functionError } = await supabase.functions.invoke('fetch-youtube-channel-videos', {
-        body: { channelUrl: url }
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.info("Digite um nome de canal para buscar.");
+      return;
+    }
+    setIsSearching(true);
+    setSearchResults([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-youtube-channels', {
+        body: { query: searchQuery }
       });
-      if (functionError) throw new Error(functionError.message);
+      if (error) throw new Error(error.message);
+      setSearchResults(data);
+    } catch (error: any) {
+      toast.error(`Erro na busca: ${error.message}`);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-      const newContent: Omit<AllowedContent, 'id' | 'user_id' | 'created_at'> = {
+  const addContentMutation = useMutation({
+    mutationFn: async (channel: YouTubeChannelSearchResult) => {
+      const newContent: Omit<AllowedContent, 'id' | 'created_at'> = {
         type: 'channel',
-        content_id: channelData.channelId,
-        name: channelData.channelName,
-        url: url,
-        thumbnail_url: channelData.channelThumbnail,
+        content_id: channel.channelId,
+        name: channel.title,
+        url: `https://www.youtube.com/channel/${channel.channelId}`,
+        thumbnail_url: channel.thumbnail,
         shorts_enabled: true,
+        user_id: user!.id,
       };
 
-      const { error: insertError } = await supabase.from('allowed_content').insert({ ...newContent, user_id: user!.id });
+      const { error: insertError } = await supabase.from('allowed_content').insert(newContent);
       if (insertError) throw new Error(insertError.message);
-      return channelData;
+      return channel;
     },
     onSuccess: (data) => {
-      toast.success(`Canal "${data.channelName}" adicionado!`);
+      toast.success(`Canal "${data.title}" adicionado!`);
       queryClient.invalidateQueries({ queryKey: ['allowedContent', user?.id] });
-      setNewUrl("");
     },
     onError: (error: Error) => {
       toast.error(`Erro ao adicionar canal: ${error.message}`);
@@ -89,6 +109,10 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
     },
   });
 
+  const isChannelAdded = (channelId: string) => {
+    return allowedContent.some(c => c.content_id === channelId);
+  };
+
   return (
     <div className="w-full h-full p-4">
       <div className="container mx-auto max-w-4xl">
@@ -97,22 +121,48 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
             <Shield className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary">Painel dos Pais</h1>
           </div>
-          <p className="text-muted-foreground mb-6">Adicione URLs de canais do YouTube que seus filhos podem assistir.</p>
+          <p className="text-muted-foreground mb-6">Busque e adicione canais do YouTube que seus filhos podem assistir.</p>
+          
           <div className="flex gap-2 mb-6">
             <Input
               type="text"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              placeholder="Cole a URL do canal do YouTube aqui"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Digite o nome do canal para buscar..."
               className="flex-1 rounded-xl"
-              disabled={addContentMutation.isPending}
-              onKeyPress={(e) => e.key === "Enter" && addContentMutation.mutate(newUrl)}
+              disabled={isSearching}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
-            <Button onClick={() => addContentMutation.mutate(newUrl)} disabled={addContentMutation.isPending || !newUrl.trim()} className="btn-kids">
-              {addContentMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-              Adicionar
+            <Button onClick={handleSearch} disabled={isSearching} className="btn-kids">
+              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5 mr-2" />}
+              Buscar
             </Button>
           </div>
+
+          {isSearching && <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div>}
+
+          {searchResults.length > 0 && (
+            <div className="space-y-3 mb-8">
+              <h2 className="text-xl font-semibold">Resultados da Busca</h2>
+              {searchResults.map((channel) => (
+                <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
+                  <div className="flex items-center gap-3 flex-1">
+                    <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full" />
+                    <span className="text-sm font-medium break-all">{channel.title}</span>
+                  </div>
+                  <Button 
+                    onClick={() => addContentMutation.mutate(channel)} 
+                    disabled={addContentMutation.isPending || isChannelAdded(channel.channelId)}
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {isChannelAdded(channel.channelId) ? 'Adicionado' : 'Adicionar'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="space-y-3">
             <h2 className="text-xl font-semibold mb-3">Conteúdo Permitido ({allowedContent.length})</h2>
             {isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> :
@@ -125,10 +175,7 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center space-x-2">
-                    <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground flex items-center gap-1">
-                      {content.shorts_enabled ? <ToggleRight className="w-4 h-4 text-primary" /> : <ToggleLeft className="w-4 h-4" />}
-                      Shorts
-                    </Label>
+                    <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground">Shorts</Label>
                     <Switch
                       id={`shorts-toggle-${content.id}`}
                       checked={content.shorts_enabled}
