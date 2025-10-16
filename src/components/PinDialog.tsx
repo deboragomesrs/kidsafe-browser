@@ -44,7 +44,7 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
             <Lock className="w-5 h-5" />
             Acesso ao Painel dos Pais
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground"> {/* Mantendo explícito para garantir a cor cinza claro */}
+          <DialogDescription className="text-muted-foreground">
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
