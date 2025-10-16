@@ -62,4 +62,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Forçando o build na Vercel para garantir a atualização do Service Worker v5.
 }));
