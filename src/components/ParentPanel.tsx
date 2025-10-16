@@ -9,7 +9,7 @@ interface Props {
   onSwitchToChild: () => void;
 }
 
-// Forçando a atualização para o deploy
+// Forçando a atualização completa do fluxo parental para o deploy.
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const { profile, isLoading: profileLoading } = useProfile();
   const [isAuthenticated, setIsAuthenticated] = useState(false);

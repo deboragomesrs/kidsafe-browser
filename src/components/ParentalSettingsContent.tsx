@@ -1,4 +1,4 @@
-// Forçando a atualização para o deploy - v2
+// Versão final com busca de canais - Forçando o deploy na Vercel.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, ArrowLeft, Shield, Loader2, Search } from "lucide-react";
