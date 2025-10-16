@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "@/context/AuthContext";
+import SimplePinInput from "./SimplePinInput"; // Novo componente
 
 export default function PinSetup() {
   const [pin, setPin] = useState("");
@@ -47,27 +47,13 @@ export default function PinSetup() {
         </p>
 
         <div className="space-y-6">
-          <div className="text-foreground"> {/* Adicionando text-foreground aqui */}
+          <div>
             <label className="font-semibold mb-2 block">Novo PIN</label>
-            <InputOTP maxLength={4} value={pin} onChange={setPin} containerClassName="justify-center">
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-              </InputOTPGroup>
-            </InputOTP>
+            <SimplePinInput length={4} value={pin} onChange={setPin} />
           </div>
-          <div className="text-foreground"> {/* Adicionando text-foreground aqui */}
+          <div>
             <label className="font-semibold mb-2 block">Confirme o PIN</label>
-            <InputOTP maxLength={4} value={confirmPin} onChange={setConfirmPin} containerClassName="justify-center">
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-              </InputOTPGroup>
-            </InputOTP>
+            <SimplePinInput length={4} value={confirmPin} onChange={setConfirmPin} />
           </div>
         </div>
 

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import SimplePinInput from "./SimplePinInput"; // Novo componente
 
 interface Props {
   open: boolean;
@@ -48,20 +48,13 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4 py-4 text-foreground"> {/* Adicionando text-foreground aqui */}
-          <InputOTP 
-            maxLength={4} 
+        <div className="flex flex-col items-center gap-4 py-4">
+          <SimplePinInput 
+            length={4} 
             value={pin} 
             onChange={handlePinChange}
-            containerClassName={cn({ "animate-shake": !!error })}
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-            </InputOTPGroup>
-          </InputOTP>
+            className={cn({ "animate-shake": !!error })}
+          />
           
           {error && (
             <p className="text-sm font-semibold text-destructive">{error}</p>
