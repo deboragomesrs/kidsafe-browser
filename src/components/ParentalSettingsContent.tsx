@@ -153,10 +153,14 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
               <h2 className="text-xl font-semibold">Resultados da Busca</h2>
               {searchResults.length > 0 ? (
                 searchResults.map((channel) => (
-                  <div key={channel.channelId} className="flex items-center justify-between bg-secondary p-3 rounded-xl">
+                  <div 
+                    key={channel.channelId} 
+                    className="flex items-center justify-between bg-secondary p-3 rounded-xl"
+                    translate="no" // Adicionado para prevenir tradução
+                  >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <img src={channel.thumbnail} alt={channel.title} className="w-10 h-10 rounded-full flex-shrink-0" />
-                      <span className="text-sm font-medium truncate">{channel.title}</span>
+                      <span className="text-sm font-medium truncate text-secondary-foreground" translate="no">{channel.title}</span>
                     </div>
                     <Button 
                       onClick={() => addContentMutation.mutate(channel)} 
@@ -179,14 +183,14 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
             {isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> :
              allowedContent.length === 0 ? <p className="text-muted-foreground text-center py-8">Nenhum canal adicionado ainda.</p> :
              allowedContent.map((content) => (
-              <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm">
+              <div key={content.id} className="flex items-center justify-between bg-secondary p-3 rounded-xl shadow-sm" translate="no">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <img src={content.thumbnail_url || ''} alt={content.name || ''} className="w-10 h-10 rounded-full flex-shrink-0" />
-                  <span className="text-sm font-medium truncate">{content.name}</span>
+                  <span className="text-sm font-medium truncate text-secondary-foreground" translate="no">{content.name}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center space-x-2">
-                    <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground">Shorts</Label>
+                    <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground" translate="no">Shorts</Label>
                     <Switch
                       id={`shorts-toggle-${content.id}`}
                       checked={content.shorts_enabled}
