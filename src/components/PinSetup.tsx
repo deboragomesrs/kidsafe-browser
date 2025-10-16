@@ -39,7 +39,7 @@ export default function PinSetup() {
 
   return (
     <div className="w-full h-full flex items-center justify-center p-4">
-      <div className="card-kids max-w-md w-full text-center" translate="no">
+      <div className="card-kids max-w-md w-full text-center" translate="no"> {/* card-kids deve aplicar o fundo cinza escuro */}
         <ShieldCheck className="w-16 h-16 text-primary mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-2 text-foreground">Configure seu PIN Parental</h1>
         <p className="text-muted-foreground mb-8">
@@ -60,6 +60,7 @@ export default function PinSetup() {
         <Button
           onClick={handleSetPin}
           disabled={isUpdating || pin.length < 4 || confirmPin.length < 4}
+          // O botão deve ser vermelho (bg-primary)
           className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-8"
         >
           {isUpdating ? "Salvando..." : "Salvar PIN"}
