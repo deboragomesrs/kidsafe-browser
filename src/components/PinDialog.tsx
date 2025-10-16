@@ -38,7 +38,8 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-card text-foreground border-border" translate="no">
+      {/* Usando bg-secondary (240 5% 20%) que é um cinza mais claro que o background (240 10% 5%) */}
+      <DialogContent className="sm:max-w-md bg-secondary text-foreground border-border" translate="no">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <Lock className="w-5 h-5" />
