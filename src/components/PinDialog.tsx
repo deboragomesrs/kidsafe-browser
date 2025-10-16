@@ -4,6 +4,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -14,15 +15,24 @@ interface Props {
 
 export default function PinDialog({ open, correctPin, onClose, onSuccess }: Props) {
   const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
     if (pin === correctPin) {
+      setError("");
       onSuccess();
       setPin("");
       toast.success("Acesso liberado!");
     } else {
-      toast.error("PIN incorreto!");
+      setError("PIN incorreto! Tente novamente.");
       setPin("");
+    }
+  };
+
+  const handlePinChange = (newPin: string) => {
+    setPin(newPin);
+    if (error) {
+      setError("");
     }
   };
 
@@ -38,8 +48,13 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-6 py-4">
-          <InputOTP maxLength={4} value={pin} onChange={setPin}>
+        <div className="flex flex-col items-center gap-4 py-4">
+          <InputOTP 
+            maxLength={4} 
+            value={pin} 
+            onChange={handlePinChange}
+            containerClassName={cn({ "animate-shake": !!error })}
+          >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -47,10 +62,15 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
               <InputOTPSlot index={3} />
             </InputOTPGroup>
           </InputOTP>
+          
+          {error && (
+            <p className="text-sm font-semibold text-destructive">{error}</p>
+          )}
+
           <Button
             type="button"
             onClick={handleSubmit}
-            className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full"
+            className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-2"
             disabled={pin.length < 4}
           >
             Entrar
