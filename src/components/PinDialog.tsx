@@ -38,7 +38,7 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-card text-foreground">
+      <DialogContent className="sm:max-w-md bg-card text-foreground" translate="no">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" />
