@@ -48,7 +48,7 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4 py-4">
+        <div className="flex flex-col items-center gap-4 py-4 text-foreground"> {/* Adicionando text-foreground aqui */}
           <InputOTP 
             maxLength={4} 
             value={pin} 

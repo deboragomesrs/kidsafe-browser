@@ -47,7 +47,7 @@ export default function PinSetup() {
         </p>
 
         <div className="space-y-6">
-          <div>
+          <div className="text-foreground"> {/* Adicionando text-foreground aqui */}
             <label className="font-semibold mb-2 block">Novo PIN</label>
             <InputOTP maxLength={4} value={pin} onChange={setPin} containerClassName="justify-center">
               <InputOTPGroup>
@@ -58,7 +58,7 @@ export default function PinSetup() {
               </InputOTPGroup>
             </InputOTP>
           </div>
-          <div>
+          <div className="text-foreground"> {/* Adicionando text-foreground aqui */}
             <label className="font-semibold mb-2 block">Confirme o PIN</label>
             <InputOTP maxLength={4} value={confirmPin} onChange={setConfirmPin} containerClassName="justify-center">
               <InputOTPGroup>
