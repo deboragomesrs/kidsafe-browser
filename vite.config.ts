@@ -39,6 +39,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        skipWaiting: true, // Força o novo service worker a ativar imediatamente
+        clientsClaim: true, // Faz o novo service worker tomar controle da página imediatamente
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/www\.youtube\.com\/.*/i,
