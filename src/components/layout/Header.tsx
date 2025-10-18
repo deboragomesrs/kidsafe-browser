@@ -83,7 +83,7 @@ export default function Header({ onEnterParentMode, onExitParentMode, isParental
         </Button>
         
         {user && (
-          <Button onClick={onEnterParentMode} variant="ghost" size="icon" disabled={location.pathname !== '/'}>
+          <Button onClick={onEnterParentMode} variant="ghost" size="icon">
             <Lock className="w-5 h-5" />
           </Button>
         )}
