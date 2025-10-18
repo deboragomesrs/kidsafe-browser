@@ -13,8 +13,7 @@ interface Props {
 export default function ChannelNav({ channels, selectedChannelId }: Props) {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
-  const scrollDirectionRef = useRef<'left' | 'right' | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -25,85 +24,69 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
     }
   };
 
-  // Este useEffect é responsável por toda a lógica de rolagem e listeners
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Função para verificar se a rolagem é possível
     const checkScrollability = () => {
       const { scrollLeft, scrollWidth, clientWidth } = container;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+      setCanScrollLeft(scrollLeft > 5); // Adiciona uma pequena margem
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
     };
 
-    // O loop de animação que faz a rolagem suave
-    const scrollStep = () => {
-      if (scrollDirectionRef.current) {
-        const scrollAmount = scrollDirectionRef.current === 'left' ? -4 : 4;
-        container.scrollLeft += scrollAmount;
-      }
-      animationFrameRef.current = requestAnimationFrame(scrollStep);
-    };
-
-    // Inicia o loop de animação
-    const startScrolling = () => {
-      if (!animationFrameRef.current) {
-        animationFrameRef.current = requestAnimationFrame(scrollStep);
-      }
-    };
-
-    // Para o loop de animação
     const stopScrolling = () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = undefined;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
 
-    // Lida com o movimento do mouse para definir a direção da rolagem
+    const startScrolling = (direction: 'left' | 'right') => {
+      stopScrolling();
+      intervalRef.current = window.setInterval(() => {
+        if (scrollContainerRef.current) {
+          const scrollAmount = direction === 'left' ? -5 : 5;
+          scrollContainerRef.current.scrollLeft += scrollAmount;
+        }
+      }, 16); // Roda a ~60fps
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
-      const activationZoneWidth = 80; // Aumentei a zona de ativação para 80px
+      const activationZoneWidth = 70; // 70px de cada borda
 
-      // Usamos uma função de callback no setState para garantir que temos o valor mais recente
-      // Isso evita o problema de "stale state"
-      let newDirection: 'left' | 'right' | null = null;
-      if (mouseX < activationZoneWidth) {
-        setCanScrollLeft(current => {
-          if (current) newDirection = 'left';
-          return current;
-        });
-      } else if (mouseX > rect.width - activationZoneWidth) {
-        setCanScrollRight(current => {
-          if (current) newDirection = 'right';
-          return current;
-        });
+      if (mouseX < activationZoneWidth && canScrollLeft) {
+        if (!intervalRef.current) startScrolling('left');
+      } else if (mouseX > rect.width - activationZoneWidth && canScrollRight) {
+        if (!intervalRef.current) startScrolling('right');
+      } else {
+        stopScrolling();
       }
-      scrollDirectionRef.current = newDirection;
+    };
+
+    const handleMouseLeave = () => {
+      stopScrolling();
     };
 
     // Adiciona os listeners
     checkScrollability();
     container.addEventListener('scroll', checkScrollability, { passive: true });
     container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseenter', startScrolling);
-    container.addEventListener('mouseleave', () => { scrollDirectionRef.current = null; });
+    container.addEventListener('mouseleave', handleMouseLeave);
     
     const resizeObserver = new ResizeObserver(checkScrollability);
     resizeObserver.observe(container);
 
-    // Função de limpeza para remover os listeners quando o componente for desmontado
+    // Limpeza ao desmontar o componente
     return () => {
       stopScrolling();
       container.removeEventListener('scroll', checkScrollability);
       container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseenter', startScrolling);
-      container.removeEventListener('mouseleave', () => { scrollDirectionRef.current = null; });
+      container.removeEventListener('mouseleave', handleMouseLeave);
       resizeObserver.unobserve(container);
     };
-  }, [channels]); // A lógica é re-executada se a lista de canais mudar
+  }, [channels, canScrollLeft, canScrollRight]); // Reavalia quando a possibilidade de scroll muda
 
   return (
     <div className="relative bg-card border-b border-border">
