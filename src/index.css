@@ -47,8 +47,6 @@ All colors MUST be HSL.
     --youtube-light-gray: 240 5% 30%; /* For borders, hover states */
     
     --gradient-hero: linear-gradient(135deg, hsl(var(--youtube-red)), hsl(var(--youtube-red-dark)));
-    /* Removendo a definição de gradiente para o card para evitar conflitos de fundo */
-    /* --gradient-card: linear-gradient(180deg, hsl(var(--card)), hsl(var(--card))); */
     
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3); /* Darker shadow for dark theme */
     --shadow-button: 0 4px 12px hsl(var(--youtube-red) / 0.25);
@@ -81,25 +79,6 @@ All colors MUST be HSL.
   h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
   }
-
-  /* Correção agressiva para tradutores de navegador */
-  [translate="no"] * {
-    /* Força a herança de cor de texto e fundo */
-    color: inherit !important;
-    background-color: inherit !important;
-  }
-  
-  /* Adicionalmente, forçar a cor de texto para foreground em elementos que deveriam ser brancos */
-  [translate="no"] {
-    color: hsl(var(--foreground)) !important;
-  }
-  
-  [translate="no"] input, 
-  [translate="no"] textarea, 
-  [translate="no"] button, 
-  [translate="no"] select {
-    color: hsl(var(--foreground)) !important;
-  }
 }
 
 @layer utilities {
@@ -120,7 +99,6 @@ All colors MUST be HSL.
   .card-kids {
     @apply bg-card rounded-3xl p-6;
     box-shadow: var(--shadow-card);
-    /* Removendo a linha de background que usava o gradiente */
   }
   
   @keyframes fade-in {

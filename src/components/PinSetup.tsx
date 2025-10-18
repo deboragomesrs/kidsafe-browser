@@ -4,7 +4,7 @@ import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "@/context/AuthContext";
-import SimplePinInput from "./SimplePinInput"; // Novo componente
+import SimplePinInput from "./SimplePinInput";
 
 export default function PinSetup() {
   const [pin, setPin] = useState("");
@@ -39,8 +39,7 @@ export default function PinSetup() {
 
   return (
     <div className="w-full h-full flex items-center justify-center p-4">
-      {/* Substituindo card-kids por bg-secondary e aplicando manualmente as outras classes de card-kids */}
-      <div className="max-w-md w-full text-center bg-secondary rounded-3xl p-6 shadow-lg" translate="no">
+      <div className="card-kids max-w-md w-full text-center" translate="no">
         <ShieldCheck className="w-16 h-16 text-primary mx-auto mb-4" />
         <h1 className="text-2xl font-bold mb-2 text-foreground">Configure seu PIN Parental</h1>
         <p className="text-muted-foreground mb-8">

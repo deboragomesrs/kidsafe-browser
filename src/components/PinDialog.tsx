@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import SimplePinInput from "./SimplePinInput"; // Novo componente
+import SimplePinInput from "./SimplePinInput";
 
 interface Props {
   open: boolean;
@@ -38,8 +38,7 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {/* Usando bg-secondary (240 5% 20%) que é um cinza mais claro que o background (240 10% 5%) */}
-      <DialogContent className="sm:max-w-md bg-secondary text-foreground border-border" translate="no">
+      <DialogContent className="sm:max-w-md bg-card text-foreground border-border" translate="no">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <Lock className="w-5 h-5" />
