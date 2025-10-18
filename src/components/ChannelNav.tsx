@@ -24,78 +24,59 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
     }
   };
 
+  // Função para verificar se a rolagem é possível
+  const checkScrollability = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      // Usamos um threshold de 1px para evitar falsos positivos/negativos
+      setCanScrollLeft(scrollLeft > 1);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Efeito para monitorar o tamanho e a posição da rolagem
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const checkScrollability = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      setCanScrollLeft(scrollLeft > 5); // Adiciona uma pequena margem
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
-    };
+    checkScrollability(); // Checagem inicial
 
-    const stopScrolling = () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-
-    const startScrolling = (direction: 'left' | 'right') => {
-      stopScrolling();
-      intervalRef.current = window.setInterval(() => {
-        if (scrollContainerRef.current) {
-          const scrollAmount = direction === 'left' ? -5 : 5;
-          scrollContainerRef.current.scrollLeft += scrollAmount;
-        }
-      }, 16); // Roda a ~60fps
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const activationZoneWidth = 70; // 70px de cada borda
-
-      if (mouseX < activationZoneWidth && canScrollLeft) {
-        if (!intervalRef.current) startScrolling('left');
-      } else if (mouseX > rect.width - activationZoneWidth && canScrollRight) {
-        if (!intervalRef.current) startScrolling('right');
-      } else {
-        stopScrolling();
-      }
-    };
-
-    const handleMouseLeave = () => {
-      stopScrolling();
-    };
-
-    // Adiciona os listeners
-    checkScrollability();
     container.addEventListener('scroll', checkScrollability, { passive: true });
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseleave', handleMouseLeave);
-    
     const resizeObserver = new ResizeObserver(checkScrollability);
     resizeObserver.observe(container);
 
-    // Limpeza ao desmontar o componente
     return () => {
-      stopScrolling();
       container.removeEventListener('scroll', checkScrollability);
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', handleMouseLeave);
       resizeObserver.unobserve(container);
     };
-  }, [channels, canScrollLeft, canScrollRight]); // Reavalia quando a possibilidade de scroll muda
+  }, [channels]); // Reavalia se a lista de canais mudar
+
+  const stopScrolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const startScrolling = (direction: 'left' | 'right') => {
+    stopScrolling(); // Garante que não haja múltiplos intervalos rodando
+    intervalRef.current = window.setInterval(() => {
+      if (scrollContainerRef.current) {
+        const scrollAmount = direction === 'left' ? -8 : 8;
+        scrollContainerRef.current.scrollLeft += scrollAmount;
+      }
+    }, 30); // Intervalo rápido para uma rolagem suave
+  };
+
+  // Efeito para limpar o intervalo quando o componente for desmontado
+  useEffect(() => {
+    return () => stopScrolling();
+  }, []);
 
   return (
     <div className="relative bg-card border-b border-border">
-      <div
-        className={cn(
-          "absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
-          canScrollLeft ? "opacity-100" : "opacity-0"
-        )}
-      />
+      {/* Contêiner principal que permite rolagem nativa por toque */}
       <div 
         ref={scrollContainerRef}
         className="flex gap-3 min-w-max p-2 md:p-3 overflow-x-auto no-scrollbar"
@@ -115,9 +96,33 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
           </Button>
         ))}
       </div>
+
+      {/* Zona de ativação de rolagem para a ESQUERDA (Desktop) */}
+      <div
+        onMouseEnter={() => startScrolling('left')}
+        onMouseLeave={stopScrolling}
+        className="absolute left-0 top-0 h-full w-16 z-20"
+        style={{ display: canScrollLeft ? 'block' : 'none' }}
+      />
+      {/* Gradiente Esquerdo */}
       <div
         className={cn(
-          "absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
+          "absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
+          canScrollLeft ? "opacity-100" : "opacity-0"
+        )}
+      />
+
+      {/* Zona de ativação de rolagem para a DIREITA (Desktop) */}
+      <div
+        onMouseEnter={() => startScrolling('right')}
+        onMouseLeave={stopScrolling}
+        className="absolute right-0 top-0 h-full w-16 z-20"
+        style={{ display: canScrollRight ? 'block' : 'none' }}
+      />
+      {/* Gradiente Direito */}
+      <div
+        className={cn(
+          "absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
           canScrollRight ? "opacity-100" : "opacity-0"
         )}
       />
