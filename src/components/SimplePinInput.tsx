@@ -13,6 +13,7 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
 
   // Garante que o valor não exceda o comprimento máximo
   const sanitizedValue = value.slice(0, length);
+  const displayValue = Array.from({ length }, (_, i) => sanitizedValue[i] || '');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const input = e.target.value;
@@ -20,7 +21,7 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
     // Aceita apenas o último dígito digitado e garante que seja um número
     const digit = input.replace(/\D/g, '').slice(-1);
 
-    const newValueArray = sanitizedValue.split('');
+    const newValueArray = displayValue;
     
     if (digit) {
       newValueArray[index] = digit;
@@ -31,21 +32,27 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
         inputRefs.current[index + 1]?.focus();
       }
     } else if (input === '') {
-      // Permite apagar
+      // Permite apagar o dígito atual
       newValueArray[index] = '';
       onChange(newValueArray.join(''));
+      
+      // Se o campo foi esvaziado, move o foco para o anterior (para cobrir casos onde o backspace não é usado)
+      if (index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === 'Backspace' && sanitizedValue[index] === '' && index > 0) {
-      // Move o foco para o input anterior ao apagar
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === 'Backspace') {
+      // Se o campo atual estiver vazio, move o foco para o anterior e deixa o handleChange lidar com a remoção do dígito
+      if (displayValue[index] === '' && index > 0) {
+        e.preventDefault(); // Previne o comportamento padrão do backspace no campo vazio
+        inputRefs.current[index - 1]?.focus();
+      }
+      // Se o campo não estiver vazio, o handleChange já lida com a remoção do dígito e a movimentação do foco.
     }
   };
-
-  // Preenche os inputs com o valor atual
-  const displayValue = Array.from({ length }, (_, i) => sanitizedValue[i] || '');
 
   return (
     <div className={cn("flex justify-center space-x-3", className)}>
@@ -53,7 +60,7 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
         <input
           key={index}
           ref={(el) => (inputRefs.current[index] = el)}
-          type="tel" // Usando tel para teclado numérico em mobile
+          type="password" // Usando 'password' para esconder o PIN
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={1}
@@ -65,10 +72,9 @@ export default function SimplePinInput({ length = 4, value, onChange, className 
             "rounded-xl border-2 border-border bg-input text-foreground",
             "focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none",
             "transition-all duration-200",
-            // Adicionando uma classe de cor de texto mais forte para garantir que seja branco
             "text-white" 
           )}
-          style={{ caretColor: 'transparent' }} // Esconde o cursor
+          // Removendo style={{ caretColor: 'transparent' }} para permitir que o usuário veja onde está digitando/apagando
         />
       ))}
     </div>
