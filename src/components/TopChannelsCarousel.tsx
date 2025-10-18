@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AllowedContent } from "@/types";
 import { cn } from "@/lib/utils";
@@ -10,40 +10,62 @@ interface Props {
 
 export default function TopChannelsCarousel({ channels, selectedChannelId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [direction, setDirection] = useState(1); // 1 = para a direita, -1 = para a esquerda
-  const [isPaused, setIsPaused] = useState(false);
+  const scrollVelocityRef = useRef(0);
+  const animationFrameId = useRef<number | null>(null);
   const navigate = useNavigate();
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const containerWidth = rect.width;
+
+    // Define uma zona neutra no centro (40% da largura total)
+    const deadZoneStart = containerWidth * 0.3;
+    const deadZoneEnd = containerWidth * 0.7;
+    const maxSpeed = 8; // Velocidade máxima de rolagem
+
+    if (mouseX > deadZoneStart && mouseX < deadZoneEnd) {
+      scrollVelocityRef.current = 0; // Parado na zona neutra
+      return;
+    }
+
+    if (mouseX < deadZoneStart) {
+      // Rolagem para a esquerda
+      const intensity = (deadZoneStart - mouseX) / deadZoneStart;
+      scrollVelocityRef.current = -intensity * maxSpeed;
+    } else {
+      // Rolagem para a direita
+      const intensity = (mouseX - deadZoneEnd) / (containerWidth - deadZoneEnd);
+      scrollVelocityRef.current = intensity * maxSpeed;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    scrollVelocityRef.current = 0; // Para de rolar quando o mouse sai
+  };
 
   useEffect(() => {
     const container = containerRef.current;
-    const content = contentRef.current;
-    if (!container || !content) return;
-
-    // Só anima se o conteúdo for maior que o contêiner
-    if (content.scrollWidth <= container.clientWidth) return;
-
-    const scrollSpeed = 0.5; // Velocidade da rolagem
-    let frameId: number;
+    if (!container) return;
 
     const animate = () => {
-      if (!isPaused) {
-        container.scrollLeft += scrollSpeed * direction;
-
-        // Inverte a direção ao chegar nas extremidades
-        if (direction === 1 && container.scrollLeft + container.clientWidth >= content.scrollWidth) {
-          setDirection(-1);
-        } else if (direction === -1 && container.scrollLeft <= 0) {
-          setDirection(1);
-        }
+      if (scrollVelocityRef.current !== 0) {
+        container.scrollLeft += scrollVelocityRef.current;
       }
-      frameId = requestAnimationFrame(animate);
+      animationFrameId.current = requestAnimationFrame(animate);
     };
 
-    frameId = requestAnimationFrame(animate);
+    animationFrameId.current = requestAnimationFrame(animate);
 
-    return () => cancelAnimationFrame(frameId);
-  }, [direction, isPaused, channels]);
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+  }, []);
 
   const handleSelect = (channel: AllowedContent) => {
     if (channel.type === 'channel' && channel.content_id) {
@@ -51,23 +73,20 @@ export default function TopChannelsCarousel({ channels, selectedChannelId }: Pro
     }
   };
 
-  // Duplicamos a lista para criar um efeito de rolagem "infinita" e suave
-  const duplicatedChannels = [...channels, ...channels];
-
   return (
     <div
       className="overflow-hidden whitespace-nowrap w-full bg-card border-b border-border cursor-pointer"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
       ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      <div ref={contentRef} className="flex gap-6 px-3 py-3">
-        {duplicatedChannels.map((channel, i) => (
+      <div className="flex gap-6 px-3 py-3 pointer-events-none"> {/* pointer-events-none para evitar que os botões interfiram no mousemove */}
+        {channels.map((channel) => (
           <button
-            key={`${channel.id}-${i}`}
+            key={channel.id}
             onClick={() => handleSelect(channel)}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition-colors shrink-0",
+              "rounded-full px-4 py-2 text-sm font-semibold transition-colors shrink-0 pointer-events-auto", // reativa os eventos de ponteiro para os botões
               "bg-secondary text-secondary-foreground hover:bg-primary/80 hover:text-primary-foreground",
               selectedChannelId === channel.content_id && "bg-primary text-primary-foreground"
             )}
