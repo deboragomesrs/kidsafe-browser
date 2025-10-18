@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import { useAuth } from "@/context/AuthContext";
+import ParentPanel from "../ParentPanel"; // Importando ParentPanel
 
 export default function MainLayout() {
   const { user, loading: authLoading } = useAuth();
@@ -10,10 +11,8 @@ export default function MainLayout() {
   const location = useLocation();
 
   const handleEnterParentMode = () => {
-    // Apenas permite entrar no modo parental se estiver na página inicial
-    if (location.pathname === "/") {
-      setIsParentalFlowActive(true);
-    }
+    // Permite entrar no modo parental de qualquer rota
+    setIsParentalFlowActive(true);
   };
 
   const handleExitParentMode = () => {
@@ -37,7 +36,12 @@ export default function MainLayout() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onExitParentMode={handleExitParentMode} />
         <main className="flex-1 overflow-y-auto no-scrollbar">
-          <Outlet context={contextValue} />
+          {/* Renderiza o ParentPanel se o fluxo estiver ativo, senão renderiza a rota atual */}
+          {isParentalFlowActive ? (
+            <ParentPanel onSwitchToChild={handleExitParentMode} />
+          ) : (
+            <Outlet context={contextValue} />
+          )}
         </main>
       </div>
     </div>
