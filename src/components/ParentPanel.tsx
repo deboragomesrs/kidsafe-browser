@@ -9,10 +9,19 @@ interface Props {
   onSwitchToChild: () => void;
 }
 
-// Forçando a atualização completa do fluxo parental para o deploy.
+// O estado isAuthenticated é mantido aqui, mas será resetado quando o usuário sair.
 export default function ParentPanel({ onSwitchToChild }: Props) {
   const { profile, isLoading: profileLoading } = useProfile();
+  // Este estado deve ser resetado sempre que o componente for montado/desmontado
+  // ou quando o usuário sair do modo pai.
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleExit = () => {
+    // Garante que o estado de autenticação seja resetado para que o PIN seja solicitado novamente
+    // na próxima vez que o usuário entrar no modo pai.
+    setIsAuthenticated(false);
+    onSwitchToChild();
+  };
 
   if (profileLoading) {
     return (
@@ -27,7 +36,7 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
     return (
       <PinDialog
         open={true}
-        onClose={onSwitchToChild} // Se o usuário fechar o diálogo, volta para o modo criança.
+        onClose={handleExit} // Se o usuário fechar o diálogo, volta para o modo criança.
         correctPin={profile.parental_pin}
         onSuccess={() => setIsAuthenticated(true)}
       />
@@ -36,9 +45,10 @@ export default function ParentPanel({ onSwitchToChild }: Props) {
 
   // Caso 2: O usuário não tem um PIN. Mostra a tela de configuração.
   if (!profile || !profile.parental_pin) {
-    return <PinSetup />;
+    // Se o usuário fechar o PinSetup (clicar no botão de voltar), ele deve sair do modo pai.
+    return <PinSetup onExit={handleExit} />;
   }
 
   // Caso 3: O usuário tem um PIN e já o digitou com sucesso. Mostra o painel de configurações.
-  return <ParentalSettingsContent onSwitchToChild={onSwitchToChild} />;
+  return <ParentalSettingsContent onSwitchToChild={handleExit} />;
 }

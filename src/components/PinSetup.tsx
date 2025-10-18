@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "@/context/AuthContext";
 import SimplePinInput from "./SimplePinInput";
 
-export default function PinSetup() {
+interface Props {
+  onExit?: () => void; // Adicionando prop opcional para sair do modo pai
+}
+
+export default function PinSetup({ onExit }: Props) {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const { user } = useAuth();
@@ -28,6 +32,8 @@ export default function PinSetup() {
         {
           onSuccess: () => {
             toast.success("PIN definido com sucesso!");
+            // Não precisamos chamar onExit aqui, pois o ParentPanel irá re-renderizar
+            // e mostrar o ParentalSettingsContent (Caso 3)
           },
           onError: (error) => {
             toast.error(`Erro ao definir PIN: ${error.message}`);
@@ -59,11 +65,22 @@ export default function PinSetup() {
 
         <Button
           onClick={handleSetPin}
-          disabled={isUpdating || pin.length < 4 || confirmPin.length < 4}
+          disabled={isUpdating || pin.length < 4 || confirmPin.length < 4 || pin !== confirmPin}
           className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-8"
         >
           {isUpdating ? "Salvando..." : "Salvar PIN"}
         </Button>
+        
+        {onExit && (
+          <Button
+            onClick={onExit}
+            variant="ghost"
+            className="w-full mt-4 text-muted-foreground hover:text-primary"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar para o Modo Criança
+          </Button>
+        )}
       </div>
     </div>
   );
