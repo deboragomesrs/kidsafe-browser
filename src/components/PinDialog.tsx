@@ -29,6 +29,13 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
     }
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Impede o recarregamento da página
+    if (pin.length === 4) {
+      handleSubmit();
+    }
+  };
+
   const handlePinChange = (newPin: string) => {
     setPin(newPin);
     if (error) {
@@ -48,7 +55,7 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
             Digite o seu PIN de 4 dígitos para continuar.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4 py-4">
+        <form onSubmit={handleFormSubmit} className="flex flex-col items-center gap-4 py-4">
           <SimplePinInput 
             length={4} 
             value={pin} 
@@ -61,14 +68,13 @@ export default function PinDialog({ open, correctPin, onClose, onSuccess }: Prop
           )}
 
           <Button
-            type="button"
-            onClick={handleSubmit}
+            type="submit" // Alterado para 'submit' para funcionar com o formulário
             className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full mt-2"
             disabled={pin.length < 4}
           >
             Entrar
           </Button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
