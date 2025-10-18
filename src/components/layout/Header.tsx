@@ -1,7 +1,7 @@
 import { Search, LogIn, LogOut, Lock, Menu, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import barraKidsLogo from "@/assets/barra-kids-logo.jpeg";
-import { NavLink } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,10 +10,15 @@ import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onEnterParentMode?: () => void;
+  onExitParentMode?: () => void;
+  isParentalFlowActive: boolean;
 }
 
-export default function Header({ onEnterParentMode }: HeaderProps) {
+export default function Header({ onEnterParentMode, onExitParentMode, isParentalFlowActive }: HeaderProps) {
   const { user, login, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const navItems = [
     {
       name: "Início",
@@ -21,6 +26,14 @@ export default function Header({ onEnterParentMode }: HeaderProps) {
       path: "/",
     },
   ];
+
+  const handleNavigateHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onExitParentMode) {
+      onExitParentMode();
+    }
+    navigate('/');
+  };
 
   return (
     <header className="bg-background text-white p-2 md:p-4 shadow-lg flex items-center justify-between gap-4">
@@ -38,31 +51,30 @@ export default function Header({ onEnterParentMode }: HeaderProps) {
             </div>
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
-                <NavLink
+                <a
                   key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground"
-                    )
-                  }
+                  href={item.path}
+                  onClick={handleNavigateHome}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location.pathname === item.path && !isParentalFlowActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground"
+                  )}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
-                </NavLink>
+                </a>
               ))}
             </nav>
           </SheetContent>
         </Sheet>
 
-        <NavLink to="/" className="flex items-center gap-3">
+        <a href="/" onClick={handleNavigateHome} className="flex items-center gap-3">
           <img src={barraKidsLogo} alt="Barra Kids Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-xl font-bold hidden sm:block">Barra Kids</h1>
-        </NavLink>
+        </a>
       </div>
       
       <div className="flex items-center gap-2">
@@ -71,7 +83,7 @@ export default function Header({ onEnterParentMode }: HeaderProps) {
         </Button>
         
         {user && (
-          <Button onClick={onEnterParentMode} variant="ghost" size="icon">
+          <Button onClick={onEnterParentMode} variant="ghost" size="icon" disabled={location.pathname !== '/'}>
             <Lock className="w-5 h-5" />
           </Button>
         )}
