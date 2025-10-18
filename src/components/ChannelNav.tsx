@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AllowedContent } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   channels: AllowedContent[];
@@ -13,7 +14,6 @@ interface Props {
 export default function ChannelNav({ channels, selectedChannelId }: Props) {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<number | null>(null);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -24,21 +24,16 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
     }
   };
 
-  // Função para verificar se a rolagem é possível
-  const checkScrollability = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      // Usamos um threshold de 1px para evitar falsos positivos/negativos
-      setCanScrollLeft(scrollLeft > 1);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
-
-  // Efeito para monitorar o tamanho e a posição da rolagem
+  // Efeito para verificar a necessidade dos botões de rolagem
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
+
+    const checkScrollability = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    };
 
     checkScrollability(); // Checagem inicial
 
@@ -50,33 +45,35 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
       container.removeEventListener('scroll', checkScrollability);
       resizeObserver.unobserve(container);
     };
-  }, [channels]); // Reavalia se a lista de canais mudar
+  }, [channels]);
 
-  const stopScrolling = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  const handleScroll = (direction: 'left' | 'right') => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const scrollAmount = (container.clientWidth / 2) * (direction === 'left' ? -1 : 1);
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
-  const startScrolling = (direction: 'left' | 'right') => {
-    stopScrolling(); // Garante que não haja múltiplos intervalos rodando
-    intervalRef.current = window.setInterval(() => {
-      if (scrollContainerRef.current) {
-        const scrollAmount = direction === 'left' ? -8 : 8;
-        scrollContainerRef.current.scrollLeft += scrollAmount;
-      }
-    }, 30); // Intervalo rápido para uma rolagem suave
-  };
-
-  // Efeito para limpar o intervalo quando o componente for desmontado
-  useEffect(() => {
-    return () => stopScrolling();
-  }, []);
-
   return (
-    <div className="relative bg-card border-b border-border">
-      {/* Contêiner principal que permite rolagem nativa por toque */}
+    <div className="relative bg-card border-b border-border group">
+      {/* Botão de Rolagem para a Esquerda */}
+      <div className={cn(
+        "absolute left-0 top-0 h-full z-20 flex items-center transition-opacity duration-300",
+        canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        <div className="h-full w-12 bg-gradient-to-r from-card to-transparent" />
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-full h-8 w-8 -ml-10 bg-background/80 hover:bg-background"
+          onClick={() => handleScroll('left')}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Contêiner de Rolagem */}
       <div 
         ref={scrollContainerRef}
         className="flex gap-3 min-w-max p-2 md:p-3 overflow-x-auto no-scrollbar"
@@ -97,35 +94,21 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
         ))}
       </div>
 
-      {/* Zona de ativação de rolagem para a ESQUERDA (Desktop) */}
-      <div
-        onMouseEnter={() => startScrolling('left')}
-        onMouseLeave={stopScrolling}
-        className="absolute left-0 top-0 h-full w-16 z-20"
-        style={{ display: canScrollLeft ? 'block' : 'none' }}
-      />
-      {/* Gradiente Esquerdo */}
-      <div
-        className={cn(
-          "absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
-          canScrollLeft ? "opacity-100" : "opacity-0"
-        )}
-      />
-
-      {/* Zona de ativação de rolagem para a DIREITA (Desktop) */}
-      <div
-        onMouseEnter={() => startScrolling('right')}
-        onMouseLeave={stopScrolling}
-        className="absolute right-0 top-0 h-full w-16 z-20"
-        style={{ display: canScrollRight ? 'block' : 'none' }}
-      />
-      {/* Gradiente Direito */}
-      <div
-        className={cn(
-          "absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
-          canScrollRight ? "opacity-100" : "opacity-0"
-        )}
-      />
+      {/* Botão de Rolagem para a Direita */}
+      <div className={cn(
+        "absolute right-0 top-0 h-full z-20 flex items-center transition-opacity duration-300",
+        canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-full h-8 w-8 -mr-10 bg-background/80 hover:bg-background"
+          onClick={() => handleScroll('right')}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+        <div className="h-full w-12 bg-gradient-to-l from-card to-transparent" />
+      </div>
     </div>
   );
 }
