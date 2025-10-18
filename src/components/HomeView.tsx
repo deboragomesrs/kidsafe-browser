@@ -4,7 +4,7 @@ import { AlertCircle, Loader2, Tv } from "lucide-react";
 import { AllowedContent, YouTubeVideo } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import VideoGrid from "./VideoGrid";
-import ChannelNav from "./ChannelNav";
+import TopChannelsCarousel from "./TopChannelsCarousel"; // Importando o novo componente
 import { useAuth } from "@/context/AuthContext";
 
 const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> => {
@@ -12,7 +12,7 @@ const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> =>
     .from('allowed_content')
     .select('*')
     .eq('user_id', userId)
-    .eq('type', 'channel'); // Apenas canais na home por enquanto
+    .eq('type', 'channel');
 
   if (error) throw new Error(error.message);
   return data || [];
@@ -91,7 +91,8 @@ export default function HomeView() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <ChannelNav channels={allowedChannels} onChannelSelect={() => {}} />
+      {/* Substituindo ChannelNav pelo novo carrossel */}
+      <TopChannelsCarousel channels={allowedChannels} />
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-6">
         <h2 className="text-2xl font-bold mb-4">Últimos Vídeos</h2>
         {isLoadingVideos ? (
