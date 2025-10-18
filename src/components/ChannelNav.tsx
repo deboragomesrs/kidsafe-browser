@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { AllowedContent } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   channels: AllowedContent[];
@@ -14,6 +13,9 @@ interface Props {
 export default function ChannelNav({ channels, selectedChannelId }: Props) {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<number>();
+  const scrollDirectionRef = useRef<'left' | 'right' | null>(null);
+
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -23,54 +25,79 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
     }
   };
 
-  const checkScrollability = () => {
+  useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container) {
+    if (!container) return;
+
+    const checkScrollability = () => {
       const { scrollLeft, scrollWidth, clientWidth } = container;
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  };
+    };
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      checkScrollability();
-      container.addEventListener('scroll', checkScrollability);
-      
-      const resizeObserver = new ResizeObserver(checkScrollability);
-      resizeObserver.observe(container);
+    const scrollStep = () => {
+      if (scrollContainerRef.current && scrollDirectionRef.current) {
+        const scrollAmount = scrollDirectionRef.current === 'left' ? -3 : 3;
+        scrollContainerRef.current.scrollLeft += scrollAmount;
+      }
+      requestRef.current = requestAnimationFrame(scrollStep);
+    };
 
-      return () => {
-        container.removeEventListener('scroll', checkScrollability);
-        resizeObserver.unobserve(container);
-      };
-    }
-  }, [channels]);
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const activationZoneWidth = 60; // 60px from each edge
 
-  const handleScroll = (direction: 'left' | 'right') => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const scrollAmount = container.clientWidth * 0.8;
-      container.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
+      if (mouseX < activationZoneWidth && canScrollLeft) {
+        scrollDirectionRef.current = 'left';
+      } else if (mouseX > rect.width - activationZoneWidth && canScrollRight) {
+        scrollDirectionRef.current = 'right';
+      } else {
+        scrollDirectionRef.current = null;
+      }
+    };
+
+    const startScrolling = () => {
+      if (!requestRef.current) {
+        requestRef.current = requestAnimationFrame(scrollStep);
+      }
+    };
+
+    const stopScrolling = () => {
+      scrollDirectionRef.current = null;
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+        requestRef.current = undefined;
+      }
+    };
+
+    checkScrollability();
+    container.addEventListener('scroll', checkScrollability);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseenter', startScrolling);
+    container.addEventListener('mouseleave', stopScrolling);
+    
+    const resizeObserver = new ResizeObserver(checkScrollability);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', checkScrollability);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseenter', startScrolling);
+      container.removeEventListener('mouseleave', stopScrolling);
+      resizeObserver.unobserve(container);
+      stopScrolling();
+    };
+  }, [channels, canScrollLeft, canScrollRight]);
 
   return (
     <div className="relative bg-card border-b border-border">
-      {canScrollLeft && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full w-12 rounded-none bg-gradient-to-r from-card to-transparent hover:bg-card/80"
-          onClick={() => handleScroll('left')}
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
-      )}
+      <div
+        className={cn(
+          "absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
+          canScrollLeft ? "opacity-100" : "opacity-0"
+        )}
+      />
       <div 
         ref={scrollContainerRef}
         className="flex gap-3 min-w-max p-2 md:p-3 overflow-x-auto no-scrollbar"
@@ -90,16 +117,12 @@ export default function ChannelNav({ channels, selectedChannelId }: Props) {
           </Button>
         ))}
       </div>
-      {canScrollRight && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full w-12 rounded-none bg-gradient-to-l from-card to-transparent hover:bg-card/80"
-          onClick={() => handleScroll('right')}
-        >
-          <ChevronRight className="w-6 h-6" />
-        </Button>
-      )}
+      <div
+        className={cn(
+          "absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-card to-transparent z-10 transition-opacity duration-300 pointer-events-none",
+          canScrollRight ? "opacity-100" : "opacity-0"
+        )}
+      />
     </div>
   );
 }
