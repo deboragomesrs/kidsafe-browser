@@ -90,7 +90,7 @@ export default function HomeView() {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col">
       <ChannelNav channels={allowedChannels} onChannelSelect={() => {}} />
       <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-6">
         <h2 className="text-2xl font-bold mb-4">Últimos Vídeos</h2>
