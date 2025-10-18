@@ -1,4 +1,3 @@
-// Versão final com busca de canais - Forçando o deploy na Vercel.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, ArrowLeft, Shield, Loader2, Search } from "lucide-react";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 import { AllowedContent } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import AddChannelDialog from "./AddChannelDialog";
 
 interface Props {
   onSwitchToChild: () => void;
@@ -20,6 +20,10 @@ interface YouTubeChannelSearchResult {
   title: string;
   description: string;
   thumbnail: string;
+}
+
+interface AddChannelSettings {
+  shortsEnabled: boolean;
 }
 
 const fetchAllowedContent = async (userId: string): Promise<AllowedContent[]> => {
@@ -35,6 +39,7 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
   const [searchResults, setSearchResults] = useState<YouTubeChannelSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchAttempted, setSearchAttempted] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<YouTubeChannelSearchResult | null>(null);
 
   const { data: allowedContent = [], isLoading } = useQuery({
     queryKey: ['allowedContent', user?.id],
@@ -64,14 +69,14 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
   };
 
   const addContentMutation = useMutation({
-    mutationFn: async (channel: YouTubeChannelSearchResult) => {
+    mutationFn: async ({ channel, settings }: { channel: YouTubeChannelSearchResult, settings: AddChannelSettings }) => {
       const newContent: Omit<AllowedContent, 'id' | 'created_at'> = {
         type: 'channel',
         content_id: channel.channelId,
         name: channel.title,
         url: `https://www.youtube.com/channel/${channel.channelId}`,
         thumbnail_url: channel.thumbnail,
-        shorts_enabled: true,
+        shorts_enabled: settings.shortsEnabled,
         user_id: user!.id,
       };
 
@@ -82,6 +87,7 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
     onSuccess: (data) => {
       toast.success(`Canal "${data.title}" adicionado!`);
       queryClient.invalidateQueries({ queryKey: ['allowedContent', user?.id] });
+      setSelectedChannel(null); // Fecha o diálogo
     },
     onError: (error: Error) => {
       toast.error(`Erro ao adicionar canal: ${error.message}`);
@@ -120,98 +126,113 @@ export default function ParentalSettingsContent({ onSwitchToChild }: Props) {
     return allowedContent.some(c => c.content_id === channelId);
   };
 
+  const handleAddChannel = (settings: AddChannelSettings) => {
+    if (selectedChannel) {
+      addContentMutation.mutate({ channel: selectedChannel, settings });
+    }
+  };
+
   return (
-    <div className="w-full h-full p-4">
-      <div className="container mx-auto max-w-4xl">
-        <div className="card-kids mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-primary">Painel dos Pais</h1>
-          </div>
-          <p className="text-muted-foreground mb-6">Busque e adicione canais do YouTube que seus filhos podem assistir.</p>
-          
-          <div className="flex gap-2 mb-6">
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Digite o nome do canal para buscar..."
-              className="flex-1 rounded-xl"
-              disabled={isSearching}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <Button onClick={handleSearch} disabled={isSearching} className="btn-kids">
-              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5 mr-2" />}
-              Buscar
-            </Button>
-          </div>
+    <>
+      <div className="w-full h-full p-4">
+        <div className="container mx-auto max-w-4xl">
+          <div className="card-kids mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Shield className="w-8 h-8 text-primary" />
+              <h1 className="text-3xl font-bold text-primary">Painel dos Pais</h1>
+            </div>
+            <p className="text-muted-foreground mb-6">Busque e adicione canais do YouTube que seus filhos podem assistir.</p>
+            
+            <div className="flex gap-2 mb-6">
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Digite o nome do canal para buscar..."
+                className="flex-1 rounded-xl"
+                disabled={isSearching}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              />
+              <Button onClick={handleSearch} disabled={isSearching} className="btn-kids">
+                {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5 mr-2" />}
+                Buscar
+              </Button>
+            </div>
 
-          {isSearching && <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div>}
+            {isSearching && <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div>}
 
-          {!isSearching && searchAttempted && (
-            <div className="space-y-3 mb-8">
-              <h2 className="text-xl font-semibold">Resultados da Busca</h2>
-              {searchResults.length > 0 ? (
-                searchResults.map((channel) => (
-                  <div 
-                    key={channel.channelId} 
-                    className="flex flex-col items-center justify-between gap-3 bg-secondary p-3 rounded-xl md:flex-row"
-                    translate="no"
-                  >
-                    <div className="flex flex-col items-center gap-2 text-center md:flex-row md:text-left md:gap-3 flex-1 min-w-0">
-                      <img src={channel.thumbnail} alt={channel.title} className="w-16 h-16 rounded-full flex-shrink-0" />
-                      <span className="text-sm font-medium text-secondary-foreground" translate="no">{channel.title}</span>
-                    </div>
-                    <Button 
-                      onClick={() => addContentMutation.mutate(channel)} 
-                      disabled={addContentMutation.isPending || isChannelAdded(channel.channelId)}
-                      size="sm"
-                      className="w-full md:w-auto"
+            {!isSearching && searchAttempted && (
+              <div className="space-y-3 mb-8">
+                <h2 className="text-xl font-semibold">Resultados da Busca</h2>
+                {searchResults.length > 0 ? (
+                  searchResults.map((channel) => (
+                    <div 
+                      key={channel.channelId} 
+                      className="flex flex-col items-center justify-between gap-3 bg-secondary p-3 rounded-xl md:flex-row"
+                      translate="no"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {isChannelAdded(channel.channelId) ? 'Adicionado' : 'Adicionar'}
+                      <div className="flex flex-col items-center gap-2 text-center md:flex-row md:text-left md:gap-3 flex-1 min-w-0">
+                        <img src={channel.thumbnail} alt={channel.title} className="w-16 h-16 rounded-full flex-shrink-0" />
+                        <span className="text-sm font-medium text-secondary-foreground" translate="no">{channel.title}</span>
+                      </div>
+                      <Button 
+                        onClick={() => setSelectedChannel(channel)} 
+                        disabled={isChannelAdded(channel.channelId)}
+                        size="sm"
+                        className="w-full md:w-auto"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {isChannelAdded(channel.channelId) ? 'Adicionado' : 'Adicionar'}
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">Nenhum canal encontrado.</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <h2 className="text-xl font-semibold mb-3">Conteúdo Permitido ({allowedContent.length})</h2>
+              {isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> :
+              allowedContent.length === 0 ? <p className="text-muted-foreground text-center py-8">Nenhum canal adicionado ainda.</p> :
+              allowedContent.map((content) => (
+                <div key={content.id} className="flex flex-col items-center justify-between gap-3 bg-secondary p-3 rounded-xl shadow-sm md:flex-row" translate="no">
+                  <div className="flex flex-col items-center gap-2 text-center md:flex-row md:text-left md:gap-3 flex-1 min-w-0">
+                    <img src={content.thumbnail_url || ''} alt={content.name || ''} className="w-16 h-16 rounded-full flex-shrink-0" />
+                    <span className="text-sm font-medium text-secondary-foreground" translate="no">{content.name}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground" translate="no">Shorts</Label>
+                      <Switch
+                        id={`shorts-toggle-${content.id}`}
+                        checked={content.shorts_enabled}
+                        onCheckedChange={() => toggleShortsMutation.mutate(content)}
+                        disabled={toggleShortsMutation.isPending}
+                      />
+                    </div>
+                    <Button onClick={() => removeContentMutation.mutate(content.id)} variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={removeContentMutation.isPending}>
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-center py-4">Nenhum canal encontrado.</p>
-              )}
+                </div>
+              ))}
             </div>
-          )}
-
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold mb-3">Conteúdo Permitido ({allowedContent.length})</h2>
-            {isLoading ? <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin" /></div> :
-             allowedContent.length === 0 ? <p className="text-muted-foreground text-center py-8">Nenhum canal adicionado ainda.</p> :
-             allowedContent.map((content) => (
-              <div key={content.id} className="flex flex-col items-center justify-between gap-3 bg-secondary p-3 rounded-xl shadow-sm md:flex-row" translate="no">
-                <div className="flex flex-col items-center gap-2 text-center md:flex-row md:text-left md:gap-3 flex-1 min-w-0">
-                  <img src={content.thumbnail_url || ''} alt={content.name || ''} className="w-16 h-16 rounded-full flex-shrink-0" />
-                  <span className="text-sm font-medium text-secondary-foreground" translate="no">{content.name}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor={`shorts-toggle-${content.id}`} className="text-xs text-muted-foreground" translate="no">Shorts</Label>
-                    <Switch
-                      id={`shorts-toggle-${content.id}`}
-                      checked={content.shorts_enabled}
-                      onCheckedChange={() => toggleShortsMutation.mutate(content)}
-                      disabled={toggleShortsMutation.isPending}
-                    />
-                  </div>
-                  <Button onClick={() => removeContentMutation.mutate(content.id)} variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={removeContentMutation.isPending}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-             ))}
           </div>
+          <Button onClick={onSwitchToChild} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Voltar para Modo Criança
+          </Button>
         </div>
-        <Button onClick={onSwitchToChild} className="btn-kids bg-primary text-primary-foreground hover:bg-primary/80 w-full">
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Voltar para Modo Criança
-        </Button>
       </div>
-    </div>
+      <AddChannelDialog
+        open={!!selectedChannel}
+        onOpenChange={(isOpen) => !isOpen && setSelectedChannel(null)}
+        channel={selectedChannel}
+        onAddChannel={handleAddChannel}
+        isAdding={addContentMutation.isPending}
+      />
+    </>
   );
 }
