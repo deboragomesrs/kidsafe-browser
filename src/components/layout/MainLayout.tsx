@@ -36,7 +36,7 @@ export default function MainLayout() {
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onExitParentMode={handleExitParentMode} />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto no-scrollbar">
           <Outlet context={contextValue} />
         </main>
       </div>

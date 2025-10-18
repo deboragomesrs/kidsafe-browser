@@ -92,7 +92,7 @@ export default function HomeView() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <ChannelNav channels={allowedChannels} onChannelSelect={() => {}} />
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-6">
         <h2 className="text-2xl font-bold mb-4">Últimos Vídeos</h2>
         {isLoadingVideos ? (
           <div className="flex items-center justify-center h-64"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>
